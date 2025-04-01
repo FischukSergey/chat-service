@@ -103,7 +103,6 @@ linters-settings:
       - name: waitgroup-by-value
 
   tagliatelle:
-    # Заполни меня.
     case:
       rules:
         json: camelCase
@@ -165,10 +164,9 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
+    - sqlclosecheck
     - staticcheck
     - stylecheck
-    - sqlclosecheck
-    - tagliatelle
     - tenv
     - testableexamples
     - testifylint

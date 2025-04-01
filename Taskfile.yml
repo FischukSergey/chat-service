@@ -4,17 +4,18 @@ version: '3'
 silent: true
 
 vars:
-  GO_MODULE: <host>/<myname>/chat-service # FIXME
+  GO_MODULE: github.com/FischukSergey/chat-service # FIXME сделал
   GO_FILES:
     sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "*.gen.go" | tr "\n" " "
 
   GOLANGCI_LINT_VERSION: v1.61.0
   GOLANGCI_LINT_CACHE:
-    sh: echo "$HOME/Library/Caches" # FIXME
+    sh: echo "$HOME/Library/Caches/golangci-lint" # сделал отдельную директорию для кэша
 
   DEV_TOOLS: |
     github.com/daixiang0/gci@v0.10.1
     mvdan.cc/gofumpt@v0.4.0
+    github.com/kazhuravlev/options-gen/cmd/options-gen@v0.33.2
 
 tasks:
   default:
@@ -38,8 +39,8 @@ tasks:
 
   fmt:
     - echo "- Format"
-    - # FIXME: gofumpt + GO_FILES
-    - # FIXME: gci + GO_MODULE + GO_FILES
+    - gofumpt -w {{.GO_FILES}}
+    - gci write --section Standard --section Default --section "Prefix({{.GO_MODULE}})" {{.GO_FILES}}
 
   lint:
     cmds:
@@ -70,9 +71,7 @@ tasks:
   dev-tools:install:
     cmds:
       - echo "- Install dev tools"
-      - # FIXME
-      - # Устанавливаем наши DEV_TOOLS с помощью `go install`
-      - go install {{.DEV_TOOLS}}
+      - for tool in {{.DEV_TOOLS}}; do go install $$tool; done
 
   generate:
     cmds:
