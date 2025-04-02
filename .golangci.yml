@@ -105,9 +105,10 @@ linters-settings:
   tagliatelle:
     case:
       rules:
-        json: camelCase
-        toml: snake_case
-    use-field-name: false
+        json: camel
+        yaml: snake
+        toml: snake
+    use-field-name: true
 
 linters:
   disable-all: true
@@ -180,3 +181,4 @@ linters:
     - usestdlibvars
     - wastedassign
     - whitespace
+    - tagliatelle
