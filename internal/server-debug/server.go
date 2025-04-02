@@ -70,6 +70,11 @@ func New(opts Options) (*Server, error) {
 	e.GET("/debug/pprof/profile", s.pprofProfile)
 	e.GET("/debug/pprof/symbol", s.pprofSymbol)
 	e.GET("/debug/pprof/trace", s.pprofTrace)
+	e.GET("/debug/pprof/goroutine", s.pprofGoroutine)
+	e.GET("/debug/pprof/heap", s.pprofHeap)
+	e.GET("/debug/pprof/threadcreate", s.pprofThreadcreate)
+	e.GET("/debug/pprof/block", s.pprofBlock)
+	e.GET("/debug/pprof/mutex", s.pprofMutex)
 
 	index.addPage("/debug/pprof/", "Get pprof index")
 	index.addPage("/debug/pprof/profile?seconds=30", "Take half-minute profile")
@@ -154,5 +159,30 @@ func (s *Server) pprofSymbol(eCtx echo.Context) error {
 
 func (s *Server) pprofTrace(eCtx echo.Context) error {
 	pprof.Trace(eCtx.Response().Writer, eCtx.Request())
+	return nil
+}
+
+func (s *Server) pprofGoroutine(eCtx echo.Context) error {
+	pprof.Index(eCtx.Response().Writer, eCtx.Request())
+	return nil
+}
+
+func (s *Server) pprofHeap(eCtx echo.Context) error {
+	pprof.Index(eCtx.Response().Writer, eCtx.Request())
+	return nil
+}
+
+func (s *Server) pprofThreadcreate(eCtx echo.Context) error {
+	pprof.Index(eCtx.Response().Writer, eCtx.Request())
+	return nil
+}
+
+func (s *Server) pprofBlock(eCtx echo.Context) error {
+	pprof.Index(eCtx.Response().Writer, eCtx.Request())
+	return nil
+}
+
+func (s *Server) pprofMutex(eCtx echo.Context) error {
+	pprof.Index(eCtx.Response().Writer, eCtx.Request())
 	return nil
 }
