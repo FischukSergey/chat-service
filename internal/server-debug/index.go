@@ -4,6 +4,7 @@ import (
 	"html/template"
 
 	"github.com/labstack/echo/v4"
+
 	"github.com/FischukSergey/chat-service/internal/logger"
 )
 
@@ -13,8 +14,7 @@ type page struct {
 }
 
 type indexPage struct {
-	pages    []page
-	logLevel string
+	pages []page
 }
 
 func newIndexPage() *indexPage {
@@ -98,7 +98,7 @@ func (i indexPage) handler(eCtx echo.Context) error {
 		</select>
 		<input type="submit" value="Change"></input>
 	</form>
-	
+
 	<script>
 		function putLogLevel() {
 			const req = new XMLHttpRequest();
