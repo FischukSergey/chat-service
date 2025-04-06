@@ -60,25 +60,39 @@ func New(opts Options) (*Server, error) {
 	index.addPage("/version", "Get build information")
 
 	// обработка "/log/level"
-	e.GET("/log/level", s.LogLevel)
-	e.PUT("/log/level", s.SetLogLevel)
+	e.PUT("/log/level", echo.WrapHandler(logger.GlobalLevel))
+	e.GET("/log/level", echo.WrapHandler(logger.GlobalLevel))
+	// e.GET("/log/level", s.LogLevel)
+	// e.PUT("/log/level", s.SetLogLevel)
 	index.addPage("/log/level", "Get log level")
 
 	// обработка "/debug/pprof/" и связанных команд
-	e.GET("/debug/pprof/", s.pprofIndex)
+{
+		pprofMux := http.NewServeMux()
+		pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+		pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		e.GET("/debug/pprof/*", echo.WrapHandler(pprofMux))
+		index.addPage("/debug/pprof/", "Go std profiler")
+		index.addPage("/debug/pprof/profile?seconds=30", "Take half-min profile")
+	}
+/*	e.GET("/debug/pprof/", s.pprofIndex)
 	e.GET("/debug/pprof/cmdline", s.pprofCmdline)
 	e.GET("/debug/pprof/profile", s.pprofProfile)
 	e.GET("/debug/pprof/symbol", s.pprofSymbol)
 	e.GET("/debug/pprof/trace", s.pprofTrace)
-	e.GET("/debug/pprof/goroutine", s.pprofGoroutine)
-	e.GET("/debug/pprof/heap", s.pprofHeap)
-	e.GET("/debug/pprof/threadcreate", s.pprofThreadcreate)
-	e.GET("/debug/pprof/block", s.pprofBlock)
-	e.GET("/debug/pprof/mutex", s.pprofMutex)
+	// e.GET("/debug/pprof/goroutine", s.pprofGoroutine)
+	// e.GET("/debug/pprof/heap", s.pprofHeap)
+	// e.GET("/debug/pprof/threadcreate", s.pprofThreadcreate)
+	// e.GET("/debug/pprof/block", s.pprofBlock)
+	// e.GET("/debug/pprof/mutex", s.pprofMutex)
 
 	index.addPage("/debug/pprof/", "Get pprof index")
 	index.addPage("/debug/pprof/profile?seconds=30", "Take half-minute profile")
-
+*/
 	e.GET("/", index.handler)
 	return s, nil
 }
@@ -111,7 +125,7 @@ func (s *Server) Version(eCtx echo.Context) error {
 	// Вернуть информацию о сборке в формате JSON
 	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
 }
-
+/*
 func (s *Server) LogLevel(eCtx echo.Context) error {
 	// Вернуть текущий уровень логирования
 	return eCtx.JSON(http.StatusOK, map[string]string{
@@ -186,3 +200,4 @@ func (s *Server) pprofMutex(eCtx echo.Context) error {
 	pprof.Index(eCtx.Response().Writer, eCtx.Request())
 	return nil
 }
+*/
