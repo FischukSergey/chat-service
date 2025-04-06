@@ -121,3 +121,15 @@ tasks:
     cmds:
       - "{{.DOCKER_COMPOSE_CMD}} rm -fsv {{.SERVICE}}"
       - "{{.DOCKER_COMPOSE_CMD}} up -d {{.SERVICE}}"
+
+  deps:sentry:
+  desc: "Запускает Sentry для мониторинга ошибок"
+  cmds:
+    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d
+
+  deps:sentry:init:
+  desc: "Инициализирует Sentry"
+  cmds:
+    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
+
+
