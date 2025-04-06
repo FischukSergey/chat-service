@@ -17,10 +17,15 @@ vars:
     mvdan.cc/gofumpt@v0.4.0
     github.com/kazhuravlev/options-gen/cmd/options-gen@v0.33.2
 
+  DOCKER_COMPOSE_PATHS: >-
+    -f ./deploy/local/docker-compose.yml
+    -f ./deploy/local/docker-compose.sentry.yml
+
+  DOCKER_COMPOSE_CMD: "docker compose"
+
 tasks:
   default:
     cmds:
-      # FIXME
       # Последовательно выполняем таски tidy, fmt, lint, tests и build
       - task: tidy
       - task: fmt
@@ -78,3 +83,41 @@ tasks:
       - echo "Run go generate..."
       - go generate ./...
     # Пригодится для выполнения задачи со "звездочкой" ниже. Или попозже.
+
+# работаем с docker compose
+  deps:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d"
+
+  deps:cmd:
+    cmds:
+      # Дать произвольную команду "docker compose"-у.
+      # `task deps:cmd -- rm -fsv` == `docker compose rm -fsv`
+      - "{{.DOCKER_COMPOSE_CMD}} {{.CLI_ARGS}}"
+
+  deps:status:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} ps"
+
+  deps:logs:
+    cmds:
+      # Показывает логи всех сервисов или одного, например,
+      # `task deps:logs`
+      # `task deps:logs -- postgres`
+      - "{{.DOCKER_COMPOSE_CMD}} -f {{.DOCKER_COMPOSE_PATHS}} logs {{.CLI_ARGS}}"
+
+  deps:stop:
+    cmds:
+      # Останавливает запущенные сервисы.
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} stop"
+
+  deps:reset-psql:
+    cmds:
+      - task: deps:reset
+        vars:
+          SERVICE: postgres
+
+  deps:reset:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} rm -fsv {{.SERVICE}}"
+      - "{{.DOCKER_COMPOSE_CMD}} up -d {{.SERVICE}}"
