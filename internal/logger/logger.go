@@ -23,8 +23,8 @@ var defaultOptions = Options{
 	clock: zapcore.DefaultClock, // Используем стандартные часы из zapcore
 }
 
-// globalLevel - глобальный уровень логирования.
-var globalLevel zap.AtomicLevel
+// GlobalLevel - глобальный уровень логирования.
+var GlobalLevel zap.AtomicLevel
 
 // MustInit - инициализирует логгер с заданными опциями.
 // Если опции не валидны, то функция вызовет panic.
@@ -42,17 +42,17 @@ func Init(opts Options) error {
 	}
 
 	// парсим log level.
-	globalLevel = zap.NewAtomicLevel()
+	GlobalLevel = zap.NewAtomicLevel()
 
 	switch opts.level {
 	case "debug":
-		globalLevel.SetLevel(zapcore.DebugLevel)
+		GlobalLevel.SetLevel(zapcore.DebugLevel)
 	case "info":
-		globalLevel.SetLevel(zapcore.InfoLevel)
+		GlobalLevel.SetLevel(zapcore.InfoLevel)
 	case "warn":
-		globalLevel.SetLevel(zapcore.WarnLevel)
+		GlobalLevel.SetLevel(zapcore.WarnLevel)
 	case "error":
-		globalLevel.SetLevel(zapcore.ErrorLevel)
+		GlobalLevel.SetLevel(zapcore.ErrorLevel)
 	}
 
 	// настраиваем логер:
@@ -90,7 +90,7 @@ func Init(opts Options) error {
 		zapcore.NewCore(
 			encoder,
 			zapcore.AddSync(os.Stdout),
-			globalLevel,
+			GlobalLevel,
 		),
 	}
 
@@ -102,20 +102,21 @@ func Init(opts Options) error {
 
 	return nil
 }
-
+/*
 // SetLevel - устанавливает новый уровень логирования.
 func SetLevel(level string) error {
-	if err := globalLevel.UnmarshalText([]byte(level)); err != nil {
+	if err := GlobalLevel.UnmarshalText([]byte(level)); err != nil {
 		return fmt.Errorf("invalid level: %v", err)
 	}
-	zap.L().Core().Enabled(globalLevel.Level())
+	zap.L().Core().Enabled(GlobalLevel.Level())
 	return nil
 }
 
 // GetLevel - возвращает текущий уровень логирования.
 func GetLevel() string {
-	return globalLevel.Level().String()
+	return GlobalLevel.Level().String()
 }
+*/
 
 // Sync - синхронизирует логгер.
 func Sync() {
