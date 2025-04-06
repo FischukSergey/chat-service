@@ -102,6 +102,7 @@ func Init(opts Options) error {
 
 	return nil
 }
+
 /*
 // SetLevel - устанавливает новый уровень логирования.
 func SetLevel(level string) error {
