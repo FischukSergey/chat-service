@@ -62,8 +62,6 @@ func New(opts Options) (*Server, error) {
 	// обработка "/log/level"
 	e.PUT("/log/level", echo.WrapHandler(logger.GlobalLevel))
 	e.GET("/log/level", echo.WrapHandler(logger.GlobalLevel))
-	// e.GET("/log/level", s.LogLevel)
-	// e.PUT("/log/level", s.SetLogLevel)
 	index.addPage("/log/level", "Get log level")
 
 	// обработка "/debug/pprof/" и связанных команд
@@ -79,20 +77,7 @@ func New(opts Options) (*Server, error) {
 		index.addPage("/debug/pprof/", "Go std profiler")
 		index.addPage("/debug/pprof/profile?seconds=30", "Take half-min profile")
 	}
-	/*	e.GET("/debug/pprof/", s.pprofIndex)
-		e.GET("/debug/pprof/cmdline", s.pprofCmdline)
-		e.GET("/debug/pprof/profile", s.pprofProfile)
-		e.GET("/debug/pprof/symbol", s.pprofSymbol)
-		e.GET("/debug/pprof/trace", s.pprofTrace)
-		// e.GET("/debug/pprof/goroutine", s.pprofGoroutine)
-		// e.GET("/debug/pprof/heap", s.pprofHeap)
-		// e.GET("/debug/pprof/threadcreate", s.pprofThreadcreate)
-		// e.GET("/debug/pprof/block", s.pprofBlock)
-		// e.GET("/debug/pprof/mutex", s.pprofMutex)
 
-		index.addPage("/debug/pprof/", "Get pprof index")
-		index.addPage("/debug/pprof/profile?seconds=30", "Take half-minute profile")
-	*/
 	e.GET("/", index.handler)
 	return s, nil
 }
@@ -125,80 +110,3 @@ func (s *Server) Version(eCtx echo.Context) error {
 	// Вернуть информацию о сборке в формате JSON
 	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
 }
-
-/*
-func (s *Server) LogLevel(eCtx echo.Context) error {
-	// Вернуть текущий уровень логирования
-	return eCtx.JSON(http.StatusOK, map[string]string{
-		"level": logger.GetLevel(),
-	})
-}
-
-func (s *Server) SetLogLevel(eCtx echo.Context) error {
-	// Получить уровень логирования
-	level := eCtx.FormValue("level")
-	if level == "" {
-		return eCtx.JSON(http.StatusBadRequest, "level is required")
-	}
-	// Установить новый глобальный уровень логирования
-	if err := logger.SetLevel(level); err != nil {
-		return eCtx.JSON(http.StatusBadRequest, err.Error())
-	}
-	// логируем изменение уровня логирования
-	s.lg.Info("log level changed", zap.String("level", logger.GetLevel()))
-
-	return eCtx.JSON(http.StatusOK, map[string]string{
-		"level": logger.GetLevel(),
-	})
-}
-
-func (s *Server) pprofIndex(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofCmdline(eCtx echo.Context) error {
-	pprof.Cmdline(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofProfile(eCtx echo.Context) error {
-	pprof.Profile(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofSymbol(eCtx echo.Context) error {
-	pprof.Symbol(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofTrace(eCtx echo.Context) error {
-	pprof.Trace(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofGoroutine(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofHeap(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofThreadcreate(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofBlock(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofMutex(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-*/

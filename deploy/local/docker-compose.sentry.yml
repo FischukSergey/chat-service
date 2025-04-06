@@ -1,0 +1,97 @@
+services:
+  redis:
+    image: redis:5-alpine
+    command: redis-server --requirepass "1234567890"
+    profiles:
+      - sentry
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - default
+      - local-network
+
+  sentry:
+    image: sentry:latest
+    platform: linux/amd64
+    profiles:
+      - sentry
+    ports:
+      - "9000:9000"
+    environment:
+      SENTRY_SECRET_KEY: "1234567890"
+      SENTRY_REDIS_HOST: "redis"
+      SENTRY_REDIS_PORT: "6379"
+      SENTRY_REDIS_PASSWORD: "1234567890"
+      SENTRY_POSTGRES_HOST: "postgres"
+      SENTRY_POSTGRES_PORT: "5432"
+      SENTRY_DB_NAME: "sentry"
+      SENTRY_DB_USER: "sentry"
+      SENTRY_DB_PASSWORD: "sentry"
+      SENTRY_ADMIN_EMAIL: "sergey.fischuk67@gmail.com"
+      SENTRY_ADMIN_PASSWORD: "1234567890"
+    volumes:
+      - sentry-data:/var/lib/sentry/files
+      - ./sentry/config.yml:/etc/sentry/config.yml
+    depends_on:
+      - redis
+    networks:
+      - default
+      - local-network
+
+  sentry_cron:
+    image: sentry:latest
+    platform: linux/amd64
+    profiles:
+      - sentry
+    command: "sentry run cron"
+    environment:
+      SENTRY_SECRET_KEY: "1234567890"
+      SENTRY_REDIS_HOST: "redis"
+      SENTRY_REDIS_PORT: "6379"
+      SENTRY_REDIS_PASSWORD: "1234567890"
+      SENTRY_POSTGRES_HOST: "postgres"
+      SENTRY_POSTGRES_PORT: "5432"
+      SENTRY_DB_NAME: "sentry"
+      SENTRY_DB_USER: "sentry"
+      SENTRY_DB_PASSWORD: "sentry"
+    depends_on:
+      - redis
+      - sentry
+    networks:
+      - default
+      - local-network
+
+  sentry_worker:
+    image: sentry:latest
+    platform: linux/amd64
+    profiles:
+      - sentry
+    command: "sentry run worker"
+    environment:
+      SENTRY_SECRET_KEY: "1234567890"
+      SENTRY_REDIS_HOST: "redis"
+      SENTRY_REDIS_PORT: "6379"
+      SENTRY_REDIS_PASSWORD: "1234567890"
+      SENTRY_POSTGRES_HOST: "postgres"
+      SENTRY_POSTGRES_PORT: "5432"
+      SENTRY_DB_NAME: "sentry"
+      SENTRY_DB_USER: "sentry"
+      SENTRY_DB_PASSWORD: "sentry"
+    depends_on:
+      - redis
+      - sentry
+    networks:
+      - default
+      - local-network
+
+volumes:
+  sentry-data:
+  redis-data:
+
+
+networks:
+  default:
+  local-network:
+    external: true

@@ -103,22 +103,6 @@ func Init(opts Options) error {
 	return nil
 }
 
-/*
-// SetLevel - устанавливает новый уровень логирования.
-func SetLevel(level string) error {
-	if err := GlobalLevel.UnmarshalText([]byte(level)); err != nil {
-		return fmt.Errorf("invalid level: %v", err)
-	}
-	zap.L().Core().Enabled(GlobalLevel.Level())
-	return nil
-}
-
-// GetLevel - возвращает текущий уровень логирования.
-func GetLevel() string {
-	return GlobalLevel.Level().String()
-}
-*/
-
 // Sync - синхронизирует логгер.
 func Sync() {
 	if err := zap.L().Sync(); err != nil && !errors.Is(err, syscall.ENOTTY) {
