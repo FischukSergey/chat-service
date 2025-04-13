@@ -5,6 +5,7 @@ type Config struct {
 	Global  GlobalConfig  `toml:"global"`
 	Log     LogConfig     `toml:"log"`
 	Servers ServersConfig `toml:"servers"`
+	Sentry  SentryConfig  `toml:"sentry"`
 }
 
 // GlobalConfig представляет глобальные настройки.
@@ -28,4 +29,11 @@ type ServersConfig struct {
 type DebugServerConfig struct {
 	// добавляем валидацию: обязательное поле, значение должно быть в формате "host:port".
 	Addr string `toml:"addr" validate:"required,hostname_port"`
+}
+
+// SentryConfig представляет настройки Sentry.
+type SentryConfig struct {
+	// DSN - URL для отправки отчетов в Sentry.
+	// добавляем валидацию: значение должно быть в формате URL, не работает если поле пустое
+	DSN string `toml:"dsn" validate:"omitempty,url"`
 }

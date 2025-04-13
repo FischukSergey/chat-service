@@ -7,6 +7,9 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/FischukSergey/chat-service/internal/buildinfo"
+	"github.com/TheZeroSlave/zapsentry"
+	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -16,6 +19,8 @@ type Options struct {
 	level          string `option:"mandatory" validate:"required,oneof=debug info warn error"`
 	productionMode bool
 	clock          zapcore.Clock
+	dsnSentry      string `validate:"omitempty,url"`
+	env            string `validate:"required,oneof=dev stage prod"`
 }
 
 // defaultOptions - стандартные опции для логгера.
@@ -25,6 +30,9 @@ var defaultOptions = Options{
 
 // GlobalLevel - глобальный уровень логирования.
 var GlobalLevel zap.AtomicLevel
+
+// SentryClient - клиент для отправки отчетов в Sentry.
+var SentryClient *sentry.Client
 
 // MustInit - инициализирует логгер с заданными опциями.
 // Если опции не валидны, то функция вызовет panic.
@@ -92,6 +100,34 @@ func Init(opts Options) error {
 			zapcore.AddSync(os.Stdout),
 			GlobalLevel,
 		),
+	}
+
+	//Если указан DSN для Sentry, настраиваем интеграцию с Sentry
+	if opts.dsnSentry != "" {
+		//Инициализируем клиент Sentry
+		var err error
+		SentryClient, err = NewSentryClient(
+			opts.dsnSentry,
+			opts.env,
+			buildinfo.BuildInfo.Main.Version,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to initialize Sentry client: %v", err)
+		}
+		//Настраиваем конфигурацию для Sentry
+		cfg := zapsentry.Configuration{
+			Level: zapcore.WarnLevel, // Отправляем в Sentry только логи уровня WARN и выше
+			Tags: map[string]string{
+				"component": "system",
+			},
+		}
+		//Создаём новое ядро Sentry
+		core, err := zapsentry.NewCore(cfg, zapsentry.NewSentryClientFromClient(SentryClient))
+		if err != nil {
+			return fmt.Errorf("failed to initialize Sentry core: %v", err)
+		}
+		//Добавляем ядро Sentry к существующим ядрам
+		cores = append(cores, core)
 	}
 
 	// создаём новый логгер

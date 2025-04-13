@@ -64,6 +64,10 @@ func New(opts Options) (*Server, error) {
 	e.GET("/log/level", echo.WrapHandler(logger.GlobalLevel))
 	index.addPage("/log/level", "Get log level")
 
+	// добавляем ручку для тестирования ERROR логов
+	e.GET("/debug/error", s.DebugError)
+	index.addPage("/debug/error", "Debug Sentry error event")
+
 	// обработка "/debug/pprof/" и связанных команд
 	{
 		pprofMux := http.NewServeMux()
@@ -109,4 +113,26 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) Version(eCtx echo.Context) error {
 	// Вернуть информацию о сборке в формате JSON
 	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
+}
+
+// DebugError - генерирует ERROR лог для тестирования
+func (s *Server) DebugError(eCtx echo.Context) error {
+	// Получаем сообщение из query параметра или используем дефолтное
+	message := eCtx.QueryParam("message")
+	if message == "" {
+		message = "Test error message"
+	}
+
+	// Логируем с уровнем ERROR
+	s.lg.Error("DEBUG ERROR triggered",
+		zap.String("message", message),
+		//	zap.String("remote_ip", eCtx.RealIP()),
+		//	zap.String("user_agent", eCtx.Request().UserAgent()),
+	)
+
+	return eCtx.JSON(http.StatusOK, map[string]string{
+		"status":         "success",
+		"message":        "ERROR log generated successfully",
+		"logged_message": message,
+	})
 }

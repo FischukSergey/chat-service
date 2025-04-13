@@ -23,6 +23,14 @@ vars:
 
   DOCKER_COMPOSE_CMD: "docker compose"
 
+  TYPES: >-
+    ChatID
+    MessageID
+    ProblemID
+    UserID
+  TYPES_PKG: types
+  TYPES_DST: ./internal/types/types.gen.go
+
 tasks:
   default:
     cmds:
@@ -79,10 +87,14 @@ tasks:
       - for tool in {{.DEV_TOOLS}}; do go install $$tool; done
 
   generate:
+    - echo "Run go generate..."
+    - go generate ./...
+    - task: gen:types
+
+  gen:types:
     cmds:
-      - echo "Run go generate..."
-      - go generate ./...
-    # Пригодится для выполнения задачи со "звездочкой" ниже. Или попозже.
+      - echo "Generate types..."
+      - go run ./cmd/gen-types/main.go {{.TYPES_PKG}} "ChatID,MessageID,ProblemID,UserID" {{.TYPES_DST}}
 
 # работаем с docker compose
   deps:
@@ -131,5 +143,3 @@ tasks:
   desc: "Инициализирует Sentry"
   cmds:
     - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
-
-
