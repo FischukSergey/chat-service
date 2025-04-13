@@ -1,4 +1,5 @@
 package types
+
 /*
 import (
 	"database/sql/driver"
@@ -58,7 +59,7 @@ func NewChatID() ChatID {
 var ChatIDNil = ChatID(uuid.Nil)
 
 //Parse парсит строку и возвращает ChatID
-func Parse[T any](s string) (ChatID, error) {	
+func Parse[T any](s string) (ChatID, error) {
 	var zero ChatID
 	uuid, err := uuid.Parse(s)
 	if err != nil {

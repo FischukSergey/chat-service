@@ -7,11 +7,12 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/FischukSergey/chat-service/internal/buildinfo"
 	"github.com/TheZeroSlave/zapsentry"
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/FischukSergey/chat-service/internal/buildinfo"
 )
 
 //go:generate options-gen -out-filename=logger_options.gen.go -from-struct=Options -defaults-from=var
@@ -26,6 +27,7 @@ type Options struct {
 // defaultOptions - стандартные опции для логгера.
 var defaultOptions = Options{
 	clock: zapcore.DefaultClock, // Используем стандартные часы из zapcore
+	env:   "dev",                // По умолчанию используем окружение dev
 }
 
 // GlobalLevel - глобальный уровень логирования.
@@ -102,9 +104,9 @@ func Init(opts Options) error {
 		),
 	}
 
-	//Если указан DSN для Sentry, настраиваем интеграцию с Sentry
+	// Если указан DSN для Sentry, настраиваем интеграцию с Sentry
 	if opts.dsnSentry != "" {
-		//Инициализируем клиент Sentry
+		// Инициализируем клиент Sentry
 		var err error
 		SentryClient, err = NewSentryClient(
 			opts.dsnSentry,
@@ -114,19 +116,19 @@ func Init(opts Options) error {
 		if err != nil {
 			return fmt.Errorf("failed to initialize Sentry client: %v", err)
 		}
-		//Настраиваем конфигурацию для Sentry
+		// Настраиваем конфигурацию для Sentry
 		cfg := zapsentry.Configuration{
 			Level: zapcore.WarnLevel, // Отправляем в Sentry только логи уровня WARN и выше
 			Tags: map[string]string{
 				"component": "system",
 			},
 		}
-		//Создаём новое ядро Sentry
+		// Создаём новое ядро Sentry
 		core, err := zapsentry.NewCore(cfg, zapsentry.NewSentryClientFromClient(SentryClient))
 		if err != nil {
 			return fmt.Errorf("failed to initialize Sentry core: %v", err)
 		}
-		//Добавляем ядро Sentry к существующим ядрам
+		// Добавляем ядро Sentry к существующим ядрам
 		cores = append(cores, core)
 	}
 

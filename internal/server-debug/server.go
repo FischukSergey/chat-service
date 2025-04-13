@@ -115,7 +115,7 @@ func (s *Server) Version(eCtx echo.Context) error {
 	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
 }
 
-// DebugError - генерирует ERROR лог для тестирования
+// DebugError - генерирует ERROR лог для тестирования.
 func (s *Server) DebugError(eCtx echo.Context) error {
 	// Получаем сообщение из query параметра или используем дефолтное
 	message := eCtx.QueryParam("message")

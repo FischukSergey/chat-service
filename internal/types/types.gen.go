@@ -241,20 +241,47 @@ func (c UserID) IsZero() bool {
 }
 
 // Parse парсит строку и возвращает UUID тип
-func Parse[T ChatID | MessageID | ProblemID | UserID](s string) (T, error) {	
-	var zero T
+func Parse[T any](s string) (T, error) {	
+	var result T
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return zero, err
+		return result, err
 	}
-	return T(id), nil
+	
+	// Преобразуем uuid.UUID в нужный тип
+	switch any(result).(type) {
+	case ChatID:
+		return any(ChatID(id)).(T), nil
+	case MessageID:
+		return any(MessageID(id)).(T), nil
+	case ProblemID:
+		return any(ProblemID(id)).(T), nil
+	case UserID:
+		return any(UserID(id)).(T), nil
+	default:
+		return any(id).(T), nil
+	}
 }
 
 // MustParse парсит строку и возвращает UUID тип или паникует
-func MustParse[T ChatID | MessageID | ProblemID | UserID](s string) T {
+func MustParse[T any](s string) T {
+	var result T
 	id, err := uuid.Parse(s)
 	if err != nil {
 		panic(err)
 	}
-	return T(id)
+	
+	// Преобразуем uuid.UUID в нужный тип
+	switch any(result).(type) {
+	case ChatID:
+		return any(ChatID(id)).(T)
+	case MessageID:
+		return any(MessageID(id)).(T)
+	case ProblemID:
+		return any(ProblemID(id)).(T)
+	case UserID:
+		return any(UserID(id)).(T)
+	default:
+		return any(id).(T)
+	}
 }
