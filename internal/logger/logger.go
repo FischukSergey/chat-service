@@ -25,6 +25,7 @@ type Options struct {
 }
 
 // defaultOptions - стандартные опции для логгера.
+// Используются, если пользователь не предоставил свои опции.
 var defaultOptions = Options{
 	clock: zapcore.DefaultClock, // Используем стандартные часы из zapcore
 	env:   "dev",                // По умолчанию используем окружение dev
