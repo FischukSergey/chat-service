@@ -6,7 +6,7 @@ silent: true
 vars:
   GO_MODULE: github.com/FischukSergey/chat-service # FIXME сделал
   GO_FILES:
-    sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "*.gen.go" | tr "\n" " "
+    sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./internal/store/*" -not -path "*.gen.go" | tr "\n" " "
 
   GOLANGCI_LINT_VERSION: v1.61.0
   GOLANGCI_LINT_CACHE:
@@ -16,11 +16,27 @@ vars:
     github.com/daixiang0/gci@v0.10.1
     mvdan.cc/gofumpt@v0.4.0
     github.com/kazhuravlev/options-gen/cmd/options-gen@v0.33.2
+    entgo.io/ent/cmd/ent@v0.14.4
+
+  ENT_SCHEMA: ./internal/store/schema
+
+  DOCKER_COMPOSE_PATHS: >-
+    -f ./deploy/local/docker-compose.yml
+    -f ./deploy/local/docker-compose.sentry.yml
+
+  DOCKER_COMPOSE_CMD: "docker compose"
+
+  TYPES: >-
+    ChatID
+    MessageID
+    ProblemID
+    UserID
+  TYPES_PKG: types
+  TYPES_DST: ./internal/types/types.gen.go
 
 tasks:
   default:
     cmds:
-      # FIXME
       # Последовательно выполняем таски tidy, fmt, lint, tests и build
       - task: tidy
       - task: fmt
@@ -61,7 +77,7 @@ tasks:
   tests:
     cmds:
       - echo "- Tests"
-      - go test -race ./...
+      - go test -race -ldflags=-extldflags=-Wl,-ld_classic ./...
 
   build:
     cmds:
@@ -74,7 +90,76 @@ tasks:
       - for tool in {{.DEV_TOOLS}}; do go install $$tool; done
 
   generate:
+    - echo "Run go generate..."
+    - go generate ./...
+    - task: gen:types
+    - task: ent:gen
+
+  gen:types:
     cmds:
-      - echo "Run go generate..."
-      - go generate ./...
-    # Пригодится для выполнения задачи со "звездочкой" ниже. Или попозже.
+      - echo "Generate types..."
+      - |
+        TYPES_ARG=$(echo "{{.TYPES}}" | tr ' ' ',' | sed 's/,$//')
+        go run ./cmd/gen-types/main.go {{.TYPES_PKG}} "$TYPES_ARG" {{.TYPES_DST}}
+
+# работаем с docker compose
+  deps:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d"
+
+  deps:cmd:
+    cmds:
+      # Дать произвольную команду "docker compose"-у.
+      # `task deps:cmd -- rm -fsv` == `docker compose rm -fsv`
+      - "{{.DOCKER_COMPOSE_CMD}} {{.CLI_ARGS}}"
+
+  deps:status:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} ps"
+
+  deps:logs:
+    cmds:
+      # Показывает логи всех сервисов или одного, например,
+      # `task deps:logs`
+      # `task deps:logs -- postgres`
+      - "{{.DOCKER_COMPOSE_CMD}} -f {{.DOCKER_COMPOSE_PATHS}} logs {{.CLI_ARGS}}"
+
+  deps:stop:
+    cmds:
+      # Останавливает запущенные сервисы.
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} stop"
+
+  deps:reset-psql:
+    cmds:
+      - task: deps:reset
+        vars:
+          SERVICE: postgres
+
+  deps:reset:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} rm -fsv {{.SERVICE}}"
+      - "{{.DOCKER_COMPOSE_CMD}} up -d {{.SERVICE}}"
+
+  deps:sentry:
+  desc: "Запускает Sentry для мониторинга ошибок"
+  cmds:
+    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d
+
+  deps:sentry:init:
+  desc: "Инициализирует Sentry"
+  cmds:
+    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
+
+# генерация ent схемы
+  ent:gen:
+    cmds:
+      - echo "Generate ent schema..."
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent generate {{.ENT_SCHEMA}}
+      - task: tidy
+
+  ent:new:
+    desc: "Generate multiple ent schemas at once"
+    cmds:
+      - echo "Generating ent schemas for Chat, Message, and Problem..."
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent new --target {{.ENT_SCHEMA}} Chat Message Problem
+      - task: tidy

@@ -36,7 +36,11 @@ func run() (errReturned error) {
 	}
 
 	// logger.Init & logger.Sync
-	if err := logger.Init(logger.NewOptions(cfg.Log.Level)); err != nil {
+	if err := logger.Init(logger.NewOptions(
+		cfg.Log.Level,
+		logger.WithDsnSentry(cfg.Sentry.DSN),
+		logger.WithEnv(cfg.Global.Env),
+	)); err != nil {
 		return fmt.Errorf("init logger: %v", err)
 	}
 	defer logger.Sync()
