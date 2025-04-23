@@ -6,7 +6,7 @@ silent: true
 vars:
   GO_MODULE: github.com/FischukSergey/chat-service # FIXME сделал
   GO_FILES:
-    sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "*.gen.go" | tr "\n" " "
+    sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./internal/store/*" -not -path "*.gen.go" | tr "\n" " "
 
   GOLANGCI_LINT_VERSION: v1.61.0
   GOLANGCI_LINT_CACHE:
@@ -16,6 +16,9 @@ vars:
     github.com/daixiang0/gci@v0.10.1
     mvdan.cc/gofumpt@v0.4.0
     github.com/kazhuravlev/options-gen/cmd/options-gen@v0.33.2
+    entgo.io/ent/cmd/ent@v0.14.4
+
+  ENT_SCHEMA: ./internal/store/schema
 
   DOCKER_COMPOSE_PATHS: >-
     -f ./deploy/local/docker-compose.yml
@@ -74,7 +77,7 @@ tasks:
   tests:
     cmds:
       - echo "- Tests"
-      - go test -race ./...
+      - go test -race -ldflags=-extldflags=-Wl,-ld_classic ./...
 
   build:
     cmds:
@@ -90,11 +93,14 @@ tasks:
     - echo "Run go generate..."
     - go generate ./...
     - task: gen:types
+    - task: ent:gen
 
   gen:types:
     cmds:
       - echo "Generate types..."
-      - go run ./cmd/gen-types/main.go {{.TYPES_PKG}} "ChatID,MessageID,ProblemID,UserID" {{.TYPES_DST}}
+      - |
+        TYPES_ARG=$(echo "{{.TYPES}}" | tr ' ' ',' | sed 's/,$//')
+        go run ./cmd/gen-types/main.go {{.TYPES_PKG}} "$TYPES_ARG" {{.TYPES_DST}}
 
 # работаем с docker compose
   deps:
@@ -143,3 +149,17 @@ tasks:
   desc: "Инициализирует Sentry"
   cmds:
     - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
+
+# генерация ent схемы
+  ent:gen:
+    cmds:
+      - echo "Generate ent schema..."
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent generate {{.ENT_SCHEMA}}
+      - task: tidy
+
+  ent:new:
+    desc: "Generate multiple ent schemas at once"
+    cmds:
+      - echo "Generating ent schemas for Chat, Message, and Problem..."
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent new --target {{.ENT_SCHEMA}} Chat Message Problem
+      - task: tidy
