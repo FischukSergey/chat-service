@@ -78,6 +78,17 @@ tasks:
     cmds:
       - echo "- Tests"
       - go test -race -ldflags=-extldflags=-Wl,-ld_classic ./...
+  tests:integration:
+    env:
+      TEST_LOG_LEVEL: info
+      TEST_KEYCLOAK_REALM: Bank
+      TEST_KEYCLOAK_CLIENT_ID: integration-testing
+      TEST_KEYCLOAK_CLIENT_SECRET: 690PX438Tu1u2U3c2e9qJQmmjhfNeOSE
+      TEST_KEYCLOAK_TEST_USER: integration-testing                  # FIXME: Поменяйте на ваше значение!
+      TEST_KEYCLOAK_TEST_PASSWORD: integration-testing              # FIXME: Поменяйте на ваше значение!
+    cmds:
+      - echo "- Integration tests"
+      - go test -tags integration -count 1 -race ./...
 
   build:
     cmds:
