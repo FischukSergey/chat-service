@@ -161,6 +161,18 @@ tasks:
   cmds:
     - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
 
+# экспорт данных из Keycloak
+  kc:export:
+    desc: "Экспортирует Bank realm из Keycloak"
+    cmds:
+      - echo "Dump Keycloak Bank realm..."
+      - |
+        {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec keycloak \
+          /opt/keycloak/bin/kc.sh export --file /tmp/realm.json --realm Bank
+      - |
+        {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} cp keycloak:/tmp/realm.json ./bank-realm.json
+      - echo "Exported in ./bank-realm.json"
+
 # генерация ent схемы
   ent:gen:
     cmds:
