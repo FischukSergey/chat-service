@@ -17,12 +17,15 @@ vars:
     mvdan.cc/gofumpt@v0.4.0
     github.com/kazhuravlev/options-gen/cmd/options-gen@v0.33.2
     entgo.io/ent/cmd/ent@v0.14.4
+    github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.2.0
+    github.com/golang/mock/mockgen@v1.6.0
 
   ENT_SCHEMA: ./internal/store/schema
 
   DOCKER_COMPOSE_PATHS: >-
     -f ./deploy/local/docker-compose.yml
     -f ./deploy/local/docker-compose.sentry.yml
+    -f ./deploy/local/docker-compose.swagger-ui.yml
 
   DOCKER_COMPOSE_CMD: "docker compose"
 
@@ -31,8 +34,13 @@ vars:
     MessageID
     ProblemID
     UserID
+    RequestID
   TYPES_PKG: types
   TYPES_DST: ./internal/types/types.gen.go
+
+  CLIENT_V1_SRC: ./api/client.v1.swagger.yml
+  CLIENT_V1_DST: ./internal/server-client/v1/server.gen.go
+  CLIENT_V1_PKG: clientv1
 
 tasks:
   default:
@@ -105,6 +113,20 @@ tasks:
     - go generate ./...
     - task: gen:types
     - task: ent:gen
+    - task: gen:api
+
+  gen:api:
+    desc: "Generate Echo server boilerplate from OpenAPI spec"
+    cmds:
+      - echo "Generate API server code..."
+      - mkdir -p $(dirname {{.CLIENT_V1_DST}})
+      - |
+        go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.2.0 \
+          --old-config-style \
+          -generate types,spec,echo-server \
+          -package {{.CLIENT_V1_PKG}} \
+          -o {{.CLIENT_V1_DST}} \
+          {{.CLIENT_V1_SRC}}
 
   gen:types:
     cmds:
@@ -150,6 +172,17 @@ tasks:
     cmds:
       - "{{.DOCKER_COMPOSE_CMD}} rm -fsv {{.SERVICE}}"
       - "{{.DOCKER_COMPOSE_CMD}} up -d {{.SERVICE}}"
+
+  deps:swagger:
+    desc: "Запускает Swagger UI для просмотра API документации"
+    cmds:
+      - COMPOSE_PROFILES=swagger-ui {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d swagger-ui
+
+  deps:swagger:reset:
+    desc: "Перезапускает Swagger UI для обновления API документации"
+    cmds:
+      - docker stop local-swagger-ui-1 || true
+      - COMPOSE_PROFILES=swagger-ui {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d swagger-ui
 
   deps:sentry:
   desc: "Запускает Sentry для мониторинга ошибок"

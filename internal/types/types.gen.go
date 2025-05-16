@@ -240,6 +240,64 @@ func (c UserID) IsZero() bool {
 	return c == UserIDNil
 }
 
+type RequestID uuid.UUID
+
+func (c RequestID) String() string {
+	return uuid.UUID(c).String()
+}
+
+//TextMarshaler реализует интерфейс encoding.TextMarshaler
+func (c RequestID) MarshalText() ([]byte, error) {
+	return uuid.UUID(c).MarshalText()
+}
+
+//TextUnmarshaler реализует интерфейс encoding.TextUnmarshaler
+func (c *RequestID) UnmarshalText(text []byte) error {
+	return (*uuid.UUID)(c).UnmarshalText(text)
+}
+
+//ValueScanner реализует интерфейс entfield.ValueScanner
+//из двух методов: Scan и Value
+func (c *RequestID) Scan(src interface{}) error {
+	return (*uuid.UUID)(c).Scan(src)
+}
+
+func (c RequestID) Value() (driver.Value, error) {
+	return uuid.UUID(c).Value()
+}
+
+//Validator реализует интерфейс entfield.Validator
+func (c RequestID) Validate() error {
+	if c == RequestIDNil {
+		return errors.New("RequestID is nil")
+	}
+	return nil
+}
+
+//Matcher реализует интерфейс gomock.Matcher
+func (c1 RequestID) Matches(x interface{}) bool {
+	if c2, ok := x.(RequestID); ok {
+		return c1 == c2
+	}
+	if id, ok := x.(uuid.UUID); ok {
+		return uuid.UUID(c1).String() == id.String()
+	}
+	return false
+}
+
+//NewRequestID создает новый RequestID
+func NewRequestID() RequestID {
+	return RequestID(uuid.New())
+}
+
+//RequestIDNil это nil RequestID
+var RequestIDNil = RequestID(uuid.Nil)
+
+//IsZero проверяет, является ли RequestID нулевым
+func (c RequestID) IsZero() bool {
+	return c == RequestIDNil
+}
+
 // Parse парсит строку и возвращает UUID тип
 func Parse[T any](s string) (T, error) {	
 	var result T

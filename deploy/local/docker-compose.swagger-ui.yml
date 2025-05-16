@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    profiles: [ "swagger-ui" ]
+    ports:
+      - "127.0.0.1:3011:8080"
+    # Монтируем директорию api для обслуживания всех контрактов
+    volumes:
+      - /Users/sergeymac/dev/chat-service/api:/usr/share/nginx/html/api
+    # Настройка для поддержки нескольких контрактов API
+    environment:
+      - BASE_URL=/
+      # Настройка URL напрямую
+      - URL=/api/client.v1.swagger.yml
+      # Список всех доступных контрактов, будет отображаться в выпадающем меню
+      - URLS=[{"name":"Client API v1","url":"/api/client.v1.swagger.yml"}]
+      # Дополнительные настройки
+      - DISPLAY_REQUEST_DURATION=true
+      - DOC_EXPANSION=list

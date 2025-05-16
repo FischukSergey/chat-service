@@ -13,6 +13,7 @@ import (
 
 	"github.com/FischukSergey/chat-service/internal/config"
 	"github.com/FischukSergey/chat-service/internal/logger"
+	clientv1 "github.com/FischukSergey/chat-service/internal/server-client/v1"
 	serverdebug "github.com/FischukSergey/chat-service/internal/server-debug"
 )
 
@@ -45,17 +46,30 @@ func run() (errReturned error) {
 	}
 	defer logger.Sync()
 
+	// Загружаем Swagger спецификацию
+	swagger, err := clientv1.GetSwagger()
+	if err != nil {
+		return fmt.Errorf("loading swagger spec: %w", err)
+	}
+	// Очищаем серверы из спецификации для избежания конфликтов
+	swagger.Servers = nil
+
 	// init debug server
 	srvDebug, err := serverdebug.New(serverdebug.NewOptions(cfg.Servers.Debug.Addr))
 	if err != nil {
 		return fmt.Errorf("init debug server: %v", err)
+	}
+	// init server client
+	srvClient, err := initServerClient(cfg.Servers.Client.Addr, cfg.Servers.Client.AllowOrigins, swagger)
+	if err != nil {
+		return fmt.Errorf("init server client: %v", err)
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// Run servers.
 	eg.Go(func() error { return srvDebug.Run(ctx) })
-
+	eg.Go(func() error { return srvClient.Run(ctx) })
 	// Run services.
 	// Ждут своего часа.
 	// ...

@@ -22,7 +22,8 @@ type LogConfig struct {
 
 // ServersConfig представляет настройки серверов.
 type ServersConfig struct {
-	Debug DebugServerConfig `toml:"debug"`
+	Debug  DebugServerConfig  `toml:"debug"`
+	Client ClientServerConfig `toml:"client"`
 }
 
 // DebugServerConfig представляет настройки отладочного сервера.
@@ -36,4 +37,10 @@ type SentryConfig struct {
 	// DSN - URL для отправки отчетов в Sentry.
 	// добавляем валидацию: значение должно быть в формате URL, не работает если поле пустое
 	DSN string `toml:"dsn" validate:"omitempty,url"`
+}
+
+// ClientServerConfig представляет настройки клиентского сервера.
+type ClientServerConfig struct {
+	Addr         string   `toml:"addr" validate:"required,hostname_port"`
+	AllowOrigins []string `toml:"allow_origins" validate:"required,dive,uri"`
 }

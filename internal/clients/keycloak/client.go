@@ -20,7 +20,7 @@ type Options struct {
 // Client is a tiny client to the KeyCloak realm operations. UMA configuration:
 // http://localhost:3010/realms/Bank/.well-known/uma2-configuration
 type Client struct {
-	//opts Options
+	// opts Options
 
 	// Добавляем прямые поля для совместимости
 	basePath     string
@@ -44,7 +44,7 @@ func New(opts Options) (*Client, error) {
 	cli.SetBaseURL(opts.basePath)
 
 	return &Client{
-		//opts: opts,
+		// opts: opts,
 
 		// Копируем значения из Options в прямые поля
 		basePath:     opts.basePath,
