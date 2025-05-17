@@ -15,8 +15,7 @@ var (
 
 type claims struct {
 	jwt.StandardClaims
-	// FIXME: добавь поля, которые нужны для проверки токена
-	Subject        string              `json:"sub,omitempty"`
+	// добавь поля, которые нужны для проверки токена
 	RealmAccess    map[string][]string `json:"realm_access,omitempty"`
 	ResourceAccess map[string]struct {
 		Roles []string `json:"roles,omitempty"`
@@ -28,13 +27,13 @@ type claims struct {
 // - ErrNoAllowedResources, if claims doesn't contain `resource_access` map or it's empty;
 // - ErrSubjectNotDefined, if claims doesn't contain `sub` field or subject is zero UUID.
 func (c claims) Valid() error {
-	// FIXME: реализуй меня
+	// реализуй меня
 
 	if err := c.StandardClaims.Valid(); err != nil {
 		return err
 	}
 
-	if c.Subject == "" {
+	if c.Subject == "" || c.Subject == "00000000-0000-0000-0000-000000000000" {
 		return ErrSubjectNotDefined
 	}
 
@@ -49,7 +48,7 @@ func (c claims) UserID() types.UserID {
 	return types.MustParse[types.UserID](c.Subject)
 }
 
-// HasResourceRole проверяет наличие указанной роли для указанного ресурса
+// HasResourceRole проверяет наличие указанной роли для указанного ресурса.
 func (c claims) HasResourceRole(resource, role string) bool {
 	resourceRoles, exists := c.ResourceAccess[resource]
 	if !exists {

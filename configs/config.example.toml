@@ -7,3 +7,6 @@ level = "info"
 [servers]
 [servers.debug]
 addr = ":8079"
+[servers.client]
+addr = ":8080"
+allow_origins = ["http://localhost:3000"]

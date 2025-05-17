@@ -17,7 +17,7 @@ type Handlers struct {
 }
 
 func NewHandlers(opts Options) (Handlers, error) {
-	// FIXME: валидация опций
+	// валидация опций
 	if err := opts.Validate(); err != nil {
 		return Handlers{}, fmt.Errorf("validate options: %v", err)
 	}

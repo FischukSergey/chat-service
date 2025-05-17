@@ -12,8 +12,7 @@ import (
 
 const nameServerClient = "server-client"
 
-//nolint:revive // ignore argument-limit rule to keep server client init in single place
-func initServerClient( // FIXME: воспользуйся мной в chat-service/main.go
+func initServerClient( // воспользуйся мной в chat-service/main.go
 	addr string,
 	allowOrigins []string,
 	v1Swagger *openapi3.T,

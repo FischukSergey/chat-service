@@ -84,7 +84,7 @@ func (s *Server) Run(ctx context.Context) error {
 		// Ожидаем завершения контекста и выполняем graceful shutdown
 		<-ctx.Done()
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 		defer cancel()
 
 		return s.srv.Shutdown(shutdownCtx)
