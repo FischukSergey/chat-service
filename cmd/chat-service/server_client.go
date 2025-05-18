@@ -6,6 +6,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
 
+	keycloakclient "github.com/FischukSergey/chat-service/internal/clients/keycloak"
 	serverclient "github.com/FischukSergey/chat-service/internal/server-client"
 	clientv1 "github.com/FischukSergey/chat-service/internal/server-client/v1"
 )
@@ -16,6 +17,7 @@ func initServerClient( // воспользуйся мной в chat-service/main
 	addr string,
 	allowOrigins []string,
 	v1Swagger *openapi3.T,
+	keycloakIntrospector *keycloakclient.Client,
 ) (*serverclient.Server, error) {
 	lg := zap.L().Named(nameServerClient)
 
@@ -24,12 +26,22 @@ func initServerClient( // воспользуйся мной в chat-service/main
 		return nil, fmt.Errorf("create v1 handlers: %v", err)
 	}
 
+	// Создаем опции для сервера
+	options := []serverclient.OptOptionsSetter{}
+
+	// Добавляем опцию для Keycloak, если клиент определен
+	if keycloakIntrospector != nil {
+		options = append(options, serverclient.WithKeycloakIntrospector(keycloakIntrospector))
+	}
+
+	// Создаем сервер
 	srv, err := serverclient.New(serverclient.NewOptions(
 		lg,
 		addr,
 		allowOrigins,
 		v1Swagger,
 		v1Handlers,
+		options...,
 	))
 	if err != nil {
 		return nil, fmt.Errorf("build server: %v", err)

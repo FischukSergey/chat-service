@@ -6,6 +6,7 @@ type Config struct {
 	Log     LogConfig     `toml:"log"`
 	Servers ServersConfig `toml:"servers"`
 	Sentry  SentryConfig  `toml:"sentry"`
+	Clients ClientsConfig `toml:"clients"`
 }
 
 // GlobalConfig представляет глобальные настройки.
@@ -43,4 +44,18 @@ type SentryConfig struct {
 type ClientServerConfig struct {
 	Addr         string   `toml:"addr" validate:"required,hostname_port"`
 	AllowOrigins []string `toml:"allow_origins" validate:"required,dive,uri"`
+}
+
+// ClientsConfig представляет настройки для Keycloak.
+type ClientsConfig struct {
+	Keycloak KeycloakConfig `toml:"keycloak"`
+}
+
+// KeycloakConfig представляет настройки для Keycloak.
+type KeycloakConfig struct {
+	BasePath     string `toml:"base_path" validate:"required,url"`
+	Realm        string `toml:"realm" validate:"required"`
+	ClientID     string `toml:"client_id" validate:"required"`
+	ClientSecret string `toml:"client_secret" validate:"required"`
+	DebugMode    bool   `toml:"debug_mode"`
 }

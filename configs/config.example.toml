@@ -10,3 +10,11 @@ addr = ":8079"
 [servers.client]
 addr = ":8080"
 allow_origins = ["http://localhost:3000"]
+
+[clients]
+[clients.keycloak]
+base_path = "http://localhost:3010"
+realm = "Bank"
+client_id = "chat-service"
+client_secret = "your-client-secret"
+debug_mode = false

@@ -14,21 +14,29 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	keycloakclient "github.com/FischukSergey/chat-service/internal/clients/keycloak"
+	"github.com/FischukSergey/chat-service/internal/middlewares"
 	clientv1 "github.com/FischukSergey/chat-service/internal/server-client/v1"
 )
 
 const (
 	readHeaderTimeout = time.Second
 	shutdownTimeout   = 3 * time.Second
+	bodyLimit         = "13KB" // Ограничение размера тела запроса до 13 килобайт
+
+	// Константы для Keycloak авторизации, надо будет поменять на то, что в конфиге.
+	keycloakResource = "chat-ui-client"
+	keycloakRole     = "support-chat-client"
 )
 
 //go:generate options-gen -out-filename=server_options.gen.go -from-struct=Options
 type Options struct {
-	logger       *zap.Logger              `option:"mandatory" validate:"required"`
-	addr         string                   `option:"mandatory" validate:"required,hostname_port"`
-	allowOrigins []string                 `option:"mandatory" validate:"min=1"`
-	v1Swagger    *openapi3.T              `option:"mandatory" validate:"required"`
-	v1Handlers   clientv1.ServerInterface `option:"mandatory" validate:"required"`
+	logger               *zap.Logger              `option:"mandatory" validate:"required"`
+	addr                 string                   `option:"mandatory" validate:"required,hostname_port"`
+	allowOrigins         []string                 `option:"mandatory" validate:"min=1"`
+	v1Swagger            *openapi3.T              `option:"mandatory" validate:"required"`
+	v1Handlers           clientv1.ServerInterface `option:"mandatory" validate:"required"`
+	keycloakIntrospector *keycloakclient.Client   `option:"optional"`
 }
 
 type Server struct {
@@ -44,6 +52,12 @@ func New(opts Options) (*Server, error) {
 
 	e := echo.New()
 	e.Use(
+		// Recovery middleware - восстанавливается после паники и логирует ошибку со стеком
+		middlewares.NewRecovery(opts.logger),
+		// Ограничение размера тела запроса
+		middleware.BodyLimit(bodyLimit),
+		// Логирование запросов - логирует информацию о запросе, включая ID
+		middlewares.NewRequestLogger(opts.logger),
 		// CORS middleware
 		middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: opts.allowOrigins,
@@ -51,6 +65,16 @@ func New(opts Options) (*Server, error) {
 			AllowHeaders: []string{"X-Request-ID", "Content-Type", "Authorization"},
 		}),
 	)
+
+	// Добавляем middleware для авторизации Keycloak, если указан introspector
+	if opts.keycloakIntrospector != nil {
+		e.Use(middlewares.NewKeycloakTokenAuth(
+			opts.keycloakIntrospector,
+			keycloakResource, // надо будет поменять на то, что в конфиге
+			keycloakRole,     // надо будет поменять на то, что в конфиге
+		))
+	}
+
 	// переделаный авторский вариант ??????????
 	// Создаем OpenAPI валидатор с правильными опциями
 	validator := oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{

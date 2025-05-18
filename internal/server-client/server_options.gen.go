@@ -4,6 +4,7 @@ package serverclient
 import (
 	fmt461e464ebed9 "fmt"
 
+	keycloakclient "github.com/FischukSergey/chat-service/internal/clients/keycloak"
 	clientv1 "github.com/FischukSergey/chat-service/internal/server-client/v1"
 	"github.com/getkin/kin-openapi/openapi3"
 	errors461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/errors"
@@ -39,6 +40,13 @@ func NewOptions(
 		opt(&o)
 	}
 	return o
+}
+
+func WithKeycloakIntrospector(opt *keycloakclient.Client) OptOptionsSetter {
+	return func(o *Options) {
+		o.keycloakIntrospector = opt
+
+	}
 }
 
 func (o *Options) Validate() error {
