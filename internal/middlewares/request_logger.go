@@ -66,9 +66,9 @@ func NewRequestLogger(logger *zap.Logger) echo.MiddlewareFunc {
 			// Если была ошибка, добавляем её в лог
 			if err != nil {
 				fields = append(fields, zap.Error(err))
-				logger.Error("request completed with error", fields...)
+				logger.With(fields...).Error("request completed with error")
 			} else {
-				logger.Info("request completed", fields...)
+				logger.With(fields...).Info("success")
 			}
 
 			return err

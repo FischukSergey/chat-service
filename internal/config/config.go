@@ -18,7 +18,8 @@ type GlobalConfig struct {
 // LogConfig представляет настройки логирования.
 type LogConfig struct {
 	// добавляем валидацию: обязательное поле, значения из {"debug", "info", "warn", "error"}.
-	Level string `toml:"level" validate:"required,oneof=debug info warn error"`
+	Level          string `toml:"level" validate:"required,oneof=debug info warn error"`
+	ProductionMode bool   `toml:"production_mode"`
 }
 
 // ServersConfig представляет настройки серверов.

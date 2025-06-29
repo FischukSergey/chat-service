@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 
 	"github.com/FischukSergey/chat-service/internal/buildinfo"
 	"github.com/FischukSergey/chat-service/internal/logger"
@@ -82,6 +85,10 @@ func New(opts Options) (*Server, error) {
 		index.addPage("/debug/pprof/profile?seconds=30", "Take half-min profile")
 	}
 
+	// добавляем ручку для отображения схемы API
+	e.GET("/shema/client/*", s.ClientSchema)
+	index.addPage("/shema/client/", "Get client OpenAPI specification")
+
 	e.GET("/", index.handler)
 	return s, nil
 }
@@ -110,6 +117,7 @@ func (s *Server) Run(ctx context.Context) error {
 	return eg.Wait()
 }
 
+// Version - возвращает информацию о сборке в формате JSON.
 func (s *Server) Version(eCtx echo.Context) error {
 	// Вернуть информацию о сборке в формате JSON
 	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
@@ -123,6 +131,7 @@ func (s *Server) DebugError(eCtx echo.Context) error {
 		message = "Test error message"
 	}
 
+	//
 	// Логируем с уровнем ERROR
 	s.lg.Error("DEBUG ERROR triggered",
 		zap.String("message", message),
@@ -135,4 +144,25 @@ func (s *Server) DebugError(eCtx echo.Context) error {
 		"message":        "ERROR log generated successfully",
 		"logged_message": message,
 	})
+}
+
+// ClientSchema - возвращает схему API клиента.
+func (s *Server) ClientSchema(eCtx echo.Context) error {
+	schemaPath := filepath.Join("api", "client.v1.swagger.yml")
+	schema, err := os.ReadFile(schemaPath)
+	if err != nil {
+		return eCtx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to read schema file",
+		})
+	}
+
+	var yamlObj any
+	if err := yaml.Unmarshal(schema, &yamlObj); err != nil {
+		return eCtx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to parse YAML",
+		})
+	}
+
+	// Преобразуем YAML-структуру в JSON и отправляем клиенту
+	return eCtx.JSON(http.StatusOK, yamlObj)
 }

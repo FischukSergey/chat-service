@@ -24,6 +24,10 @@ type Options struct {
 	env            string `validate:"required,oneof=dev stage prod"`
 }
 
+// type jsonWriter struct {
+// 	writer io.Writer
+// }
+
 // defaultOptions - стандартные опции для логгера.
 // Используются, если пользователь не предоставил свои опции.
 var defaultOptions = Options{
@@ -85,7 +89,9 @@ func Init(opts Options) error {
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
 	}
+
 	// выбираем формат вывода лога
 	var encoder zapcore.Encoder
 	if opts.productionMode {
@@ -100,6 +106,7 @@ func Init(opts Options) error {
 	cores := []zapcore.Core{
 		zapcore.NewCore(
 			encoder,
+			// zapcore.AddSync(newJSONWriter(os.Stdout)),
 			zapcore.AddSync(os.Stdout),
 			GlobalLevel,
 		),
@@ -148,3 +155,28 @@ func Sync() {
 		stdlog.Printf("cannot sync logger: %v", err)
 	}
 }
+
+// для логирования в формате JSON.
+// func newJSONWriter(w io.Writer) *jsonWriter {
+// 	return &jsonWriter{writer: w}
+// }
+/*
+func (w *jsonWriter) Write(p []byte) (n int, err error) {
+	// Парсим JSON
+	var v any
+	if err := json.Unmarshal(p, &v); err != nil {
+		// Если это не JSON, просто выводим как есть
+		return w.writer.Write(p)
+	}
+
+	// Форматируем JSON с отступами
+	pretty, err := json.MarshalIndent(v, "", "    ")
+	if err != nil {
+		return w.writer.Write(p)
+	}
+
+	// Добавляем перенос строки в конце
+	pretty = append(pretty, '\n')
+	return w.writer.Write(pretty)
+}
+*/
