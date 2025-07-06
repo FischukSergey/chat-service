@@ -6,7 +6,7 @@ silent: true
 vars:
   GO_MODULE: github.com/FischukSergey/chat-service # FIXME сделал
   GO_FILES:
-    sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "*.gen.go" | tr "\n" " "
+    sh: find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./internal/store/*" -not -path "*.gen.go" | tr "\n" " "
 
   GOLANGCI_LINT_VERSION: v1.61.0
   GOLANGCI_LINT_CACHE:
@@ -16,11 +16,35 @@ vars:
     github.com/daixiang0/gci@v0.10.1
     mvdan.cc/gofumpt@v0.4.0
     github.com/kazhuravlev/options-gen/cmd/options-gen@v0.33.2
+    entgo.io/ent/cmd/ent@v0.14.4
+    github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.2.0
+    github.com/golang/mock/mockgen@v1.6.0
+
+  ENT_SCHEMA: ./internal/store/schema
+
+  DOCKER_COMPOSE_PATHS: >-
+    -f ./deploy/local/docker-compose.yml
+    -f ./deploy/local/docker-compose.sentry.yml
+    -f ./deploy/local/docker-compose.swagger-ui.yml
+
+  DOCKER_COMPOSE_CMD: "docker compose"
+
+  TYPES: >-
+    ChatID
+    MessageID
+    ProblemID
+    UserID
+    RequestID
+  TYPES_PKG: types
+  TYPES_DST: ./internal/types/types.gen.go
+
+  CLIENT_V1_SRC: ./api/client.v1.swagger.yml
+  CLIENT_V1_DST: ./internal/server-client/v1/server.gen.go
+  CLIENT_V1_PKG: clientv1
 
 tasks:
   default:
     cmds:
-      # FIXME
       # Последовательно выполняем таски tidy, fmt, lint, tests и build
       - task: tidy
       - task: fmt
@@ -61,7 +85,18 @@ tasks:
   tests:
     cmds:
       - echo "- Tests"
-      - go test -race ./...
+      - go test -race -ldflags=-extldflags=-Wl,-ld_classic ./...
+  tests:integration:
+    env:
+      TEST_LOG_LEVEL: info
+      TEST_KEYCLOAK_REALM: Bank
+      TEST_KEYCLOAK_CLIENT_ID: integration-testing
+      TEST_KEYCLOAK_CLIENT_SECRET: 690PX438Tu1u2U3c2e9qJQmmjhfNeOSE
+      TEST_KEYCLOAK_TEST_USER: integration-testing                  # FIXME: Поменяйте на ваше значение!
+      TEST_KEYCLOAK_TEST_PASSWORD: integration-testing              # FIXME: Поменяйте на ваше значение!
+    cmds:
+      - echo "- Integration tests"
+      - go test -tags integration -count 1 -race ./...
 
   build:
     cmds:
@@ -74,7 +109,115 @@ tasks:
       - for tool in {{.DEV_TOOLS}}; do go install $$tool; done
 
   generate:
+    - echo "Run go generate..."
+    - go generate ./...
+    - task: gen:types
+    - task: ent:gen
+    - task: gen:api
+
+  gen:api:
+    desc: "Generate Echo server boilerplate from OpenAPI spec"
     cmds:
-      - echo "Run go generate..."
-      - go generate ./...
-    # Пригодится для выполнения задачи со "звездочкой" ниже. Или попозже.
+      - echo "Generate API server code..."
+      - mkdir -p $(dirname {{.CLIENT_V1_DST}})
+      - |
+        go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.2.0 \
+          --old-config-style \
+          -generate types,spec,echo-server \
+          -package {{.CLIENT_V1_PKG}} \
+          -o {{.CLIENT_V1_DST}} \
+          {{.CLIENT_V1_SRC}}
+
+  gen:types:
+    cmds:
+      - echo "Generate types..."
+      - |
+        TYPES_ARG=$(echo "{{.TYPES}}" | tr ' ' ',' | sed 's/,$//')
+        go run ./cmd/gen-types/main.go {{.TYPES_PKG}} "$TYPES_ARG" {{.TYPES_DST}}
+
+# работаем с docker compose
+  deps:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d"
+
+  deps:cmd:
+    cmds:
+      # Дать произвольную команду "docker compose"-у.
+      # `task deps:cmd -- rm -fsv` == `docker compose rm -fsv`
+      - "{{.DOCKER_COMPOSE_CMD}} {{.CLI_ARGS}}"
+
+  deps:status:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} ps"
+
+  deps:logs:
+    cmds:
+      # Показывает логи всех сервисов или одного, например,
+      # `task deps:logs`
+      # `task deps:logs -- postgres`
+      - "{{.DOCKER_COMPOSE_CMD}} -f {{.DOCKER_COMPOSE_PATHS}} logs {{.CLI_ARGS}}"
+
+  deps:stop:
+    cmds:
+      # Останавливает запущенные сервисы.
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} stop"
+
+  deps:reset-psql:
+    cmds:
+      - task: deps:reset
+        vars:
+          SERVICE: postgres
+
+  deps:reset:
+    cmds:
+      - "{{.DOCKER_COMPOSE_CMD}} rm -fsv {{.SERVICE}}"
+      - "{{.DOCKER_COMPOSE_CMD}} up -d {{.SERVICE}}"
+
+  deps:swagger:
+    desc: "Запускает Swagger UI для просмотра API документации"
+    cmds:
+      - COMPOSE_PROFILES=swagger-ui {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d swagger-ui
+
+  deps:swagger:reset:
+    desc: "Перезапускает Swagger UI для обновления API документации"
+    cmds:
+      - docker stop local-swagger-ui-1 || true
+      - COMPOSE_PROFILES=swagger-ui {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d swagger-ui
+
+  deps:sentry:
+  desc: "Запускает Sentry для мониторинга ошибок"
+  cmds:
+    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d
+
+  deps:sentry:init:
+  desc: "Инициализирует Sentry"
+  cmds:
+    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
+
+# экспорт данных из Keycloak
+  kc:export:
+    desc: "Экспортирует Bank realm из Keycloak"
+    cmds:
+      - echo "Dump Keycloak Bank realm..."
+      - |
+        {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec keycloak \
+          /opt/keycloak/bin/kc.sh export --file /tmp/realm.json --realm Bank
+      - |
+        {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} cp keycloak:/tmp/realm.json ./bank-realm.json
+      - |
+        cp ./bank-realm.json ./deploy/local/bank-realm.json
+      - echo "Exported in ./deploy/local/bank-realm.json"
+
+# генерация ent схемы
+  ent:gen:
+    cmds:
+      - echo "Generate ent schema..."
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent generate {{.ENT_SCHEMA}}
+      - task: tidy
+
+  ent:new:
+    desc: "Generate multiple ent schemas at once"
+    cmds:
+      - echo "Generating ent schemas for Chat, Message, and Problem..."
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent new --target {{.ENT_SCHEMA}} Chat Message Problem
+      - task: tidy

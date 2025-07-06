@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 
 	"github.com/FischukSergey/chat-service/internal/buildinfo"
 	"github.com/FischukSergey/chat-service/internal/logger"
@@ -62,9 +65,11 @@ func New(opts Options) (*Server, error) {
 	// обработка "/log/level"
 	e.PUT("/log/level", echo.WrapHandler(logger.GlobalLevel))
 	e.GET("/log/level", echo.WrapHandler(logger.GlobalLevel))
-	// e.GET("/log/level", s.LogLevel)
-	// e.PUT("/log/level", s.SetLogLevel)
 	index.addPage("/log/level", "Get log level")
+
+	// добавляем ручку для тестирования ERROR логов
+	e.GET("/debug/error", s.DebugError)
+	index.addPage("/debug/error", "Debug Sentry error event")
 
 	// обработка "/debug/pprof/" и связанных команд
 	{
@@ -79,20 +84,11 @@ func New(opts Options) (*Server, error) {
 		index.addPage("/debug/pprof/", "Go std profiler")
 		index.addPage("/debug/pprof/profile?seconds=30", "Take half-min profile")
 	}
-	/*	e.GET("/debug/pprof/", s.pprofIndex)
-		e.GET("/debug/pprof/cmdline", s.pprofCmdline)
-		e.GET("/debug/pprof/profile", s.pprofProfile)
-		e.GET("/debug/pprof/symbol", s.pprofSymbol)
-		e.GET("/debug/pprof/trace", s.pprofTrace)
-		// e.GET("/debug/pprof/goroutine", s.pprofGoroutine)
-		// e.GET("/debug/pprof/heap", s.pprofHeap)
-		// e.GET("/debug/pprof/threadcreate", s.pprofThreadcreate)
-		// e.GET("/debug/pprof/block", s.pprofBlock)
-		// e.GET("/debug/pprof/mutex", s.pprofMutex)
 
-		index.addPage("/debug/pprof/", "Get pprof index")
-		index.addPage("/debug/pprof/profile?seconds=30", "Take half-minute profile")
-	*/
+	// добавляем ручку для отображения схемы API
+	e.GET("/shema/client/*", s.ClientSchema)
+	index.addPage("/shema/client/", "Get client OpenAPI specification")
+
 	e.GET("/", index.handler)
 	return s, nil
 }
@@ -121,84 +117,52 @@ func (s *Server) Run(ctx context.Context) error {
 	return eg.Wait()
 }
 
+// Version - возвращает информацию о сборке в формате JSON.
 func (s *Server) Version(eCtx echo.Context) error {
 	// Вернуть информацию о сборке в формате JSON
 	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
 }
 
-/*
-func (s *Server) LogLevel(eCtx echo.Context) error {
-	// Вернуть текущий уровень логирования
+// DebugError - генерирует ERROR лог для тестирования.
+func (s *Server) DebugError(eCtx echo.Context) error {
+	// Получаем сообщение из query параметра или используем дефолтное
+	message := eCtx.QueryParam("message")
+	if message == "" {
+		message = "Test error message"
+	}
+
+	//
+	// Логируем с уровнем ERROR
+	s.lg.Error("DEBUG ERROR triggered",
+		zap.String("message", message),
+		//	zap.String("remote_ip", eCtx.RealIP()),
+		//	zap.String("user_agent", eCtx.Request().UserAgent()),
+	)
+
 	return eCtx.JSON(http.StatusOK, map[string]string{
-		"level": logger.GetLevel(),
+		"status":         "success",
+		"message":        "ERROR log generated successfully",
+		"logged_message": message,
 	})
 }
 
-func (s *Server) SetLogLevel(eCtx echo.Context) error {
-	// Получить уровень логирования
-	level := eCtx.FormValue("level")
-	if level == "" {
-		return eCtx.JSON(http.StatusBadRequest, "level is required")
+// ClientSchema - возвращает схему API клиента.
+func (s *Server) ClientSchema(eCtx echo.Context) error {
+	schemaPath := filepath.Join("api", "client.v1.swagger.yml")
+	schema, err := os.ReadFile(schemaPath)
+	if err != nil {
+		return eCtx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to read schema file",
+		})
 	}
-	// Установить новый глобальный уровень логирования
-	if err := logger.SetLevel(level); err != nil {
-		return eCtx.JSON(http.StatusBadRequest, err.Error())
+
+	var yamlObj any
+	if err := yaml.Unmarshal(schema, &yamlObj); err != nil {
+		return eCtx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to parse YAML",
+		})
 	}
-	// логируем изменение уровня логирования
-	s.lg.Info("log level changed", zap.String("level", logger.GetLevel()))
 
-	return eCtx.JSON(http.StatusOK, map[string]string{
-		"level": logger.GetLevel(),
-	})
+	// Преобразуем YAML-структуру в JSON и отправляем клиенту
+	return eCtx.JSON(http.StatusOK, yamlObj)
 }
-
-func (s *Server) pprofIndex(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofCmdline(eCtx echo.Context) error {
-	pprof.Cmdline(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofProfile(eCtx echo.Context) error {
-	pprof.Profile(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofSymbol(eCtx echo.Context) error {
-	pprof.Symbol(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofTrace(eCtx echo.Context) error {
-	pprof.Trace(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofGoroutine(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofHeap(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofThreadcreate(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofBlock(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-
-func (s *Server) pprofMutex(eCtx echo.Context) error {
-	pprof.Index(eCtx.Response().Writer, eCtx.Request())
-	return nil
-}
-*/

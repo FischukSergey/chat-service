@@ -1,0 +1,23 @@
+# Web Server
+system.url-prefix: 'http://localhost:9000'
+system.secret-key: '1234567890'
+
+# Auth
+auth.allow-registration: true
+
+# Database
+database.engine: 'django.db.backends.postgresql'
+database.name: 'sentry'
+database.user: 'sentry'
+database.password: 'sentry'
+database.host: 'postgres'
+database.port: 5432
+
+# Redis
+redis.clusters:
+  default:
+    hosts:
+      0:
+        host: 'redis'
+        port: 6379
+        password: '1234567890'
