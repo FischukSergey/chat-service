@@ -7,6 +7,7 @@ type Config struct {
 	Servers ServersConfig `toml:"servers"`
 	Sentry  SentryConfig  `toml:"sentry"`
 	Clients ClientsConfig `toml:"clients"`
+	Stores  StoreConfig   `toml:"stores"` // Оставляем Stores
 }
 
 // GlobalConfig представляет глобальные настройки.
@@ -59,4 +60,18 @@ type KeycloakConfig struct {
 	ClientID     string `toml:"client_id" validate:"required"`
 	ClientSecret string `toml:"client_secret" validate:"required"`
 	DebugMode    bool   `toml:"debug_mode"`
+}
+
+// StoreConfig представляет настройки для хранилища.
+type StoreConfig struct {
+	PSQL PSQLConfig `toml:"psql"`
+}
+
+// PSQLConfig представляет настройки для PostgreSQL.
+type PSQLConfig struct {
+	Address  string `toml:"addr" validate:"required,hostname_port"` // Изменено: address → addr (под конфиг)
+	Username string `toml:"username" validate:"required"`
+	Password string `toml:"password" validate:"required"`
+	Database string `toml:"database" validate:"required"`
+	Debug    bool   `toml:"debug"`
 }

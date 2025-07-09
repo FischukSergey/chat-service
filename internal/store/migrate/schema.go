@@ -53,6 +53,48 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "message_chat_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[8], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_problem_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[9], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_chat_id_author_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[8], MessagesColumns[2], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_chat_id_is_visible_for_client_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[8], MessagesColumns[3], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_chat_id_is_visible_for_manager_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[8], MessagesColumns[4], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_is_blocked_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[5], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_chat_id_is_service_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[8], MessagesColumns[6], MessagesColumns[7]},
+			},
+			{
+				Name:    "message_author_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[2], MessagesColumns[7]},
+			},
+		},
 	}
 	// ProblemsColumns holds the columns for the "problems" table.
 	ProblemsColumns = []*schema.Column{

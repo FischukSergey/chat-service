@@ -88,6 +88,11 @@ tasks:
       - go test -race -ldflags=-extldflags=-Wl,-ld_classic ./...
   tests:integration:
     env:
+      TEST_PSQL_ADDR: 127.0.0.1:5432
+      TEST_PSQL_USER: chat-service
+      TEST_PSQL_PASSWORD: chat-service
+      TEST_PSQL_DATABASE: chat_service_test  # Добавляем эту строку
+      TEST_PSQL_DEBUG: true
       TEST_LOG_LEVEL: info
       TEST_KEYCLOAK_REALM: Bank
       TEST_KEYCLOAK_CLIENT_ID: integration-testing
@@ -164,14 +169,19 @@ tasks:
 
   deps:reset-psql:
     cmds:
-      - task: deps:reset
-        vars:
-          SERVICE: postgres
+      - echo "Сброс PostgreSQL с сохранением данных..."
+      - "{{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} restart postgres"
+      - sleep 5
+      - echo "Создание пользователей..."
+      - "docker exec -i local-postgres-1 psql -U chat-service -d postgres < deploy/local/create-users.sql"
+      - echo "PostgreSQL готов"
 
-  deps:reset:
+  deps:init-psql:
+    desc: "Инициализация PostgreSQL (игнорирует ошибки если уже существует)"
     cmds:
-      - "{{.DOCKER_COMPOSE_CMD}} rm -fsv {{.SERVICE}}"
-      - "{{.DOCKER_COMPOSE_CMD}} up -d {{.SERVICE}}"
+      - echo "Инициализация PostgreSQL..."
+      - "docker exec -i local-postgres-1 psql -U chat-service -d postgres < deploy/local/ensure-setup.sql 2>/dev/null || true"
+      - echo "PostgreSQL готов"
 
   deps:swagger:
     desc: "Запускает Swagger UI для просмотра API документации"
@@ -185,14 +195,14 @@ tasks:
       - COMPOSE_PROFILES=swagger-ui {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d swagger-ui
 
   deps:sentry:
-  desc: "Запускает Sentry для мониторинга ошибок"
-  cmds:
-    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d
+    desc: "Запускает Sentry для мониторинга ошибок"
+    cmds:
+      - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} up -d
 
   deps:sentry:init:
-  desc: "Инициализирует Sentry"
-  cmds:
-    - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
+    desc: "Инициализирует Sentry"
+    cmds:
+      - COMPOSE_PROFILES=sentry {{.DOCKER_COMPOSE_CMD}} {{.DOCKER_COMPOSE_PATHS}} exec sentry sentry upgrade
 
 # экспорт данных из Keycloak
   kc:export:
@@ -212,7 +222,7 @@ tasks:
   ent:gen:
     cmds:
       - echo "Generate ent schema..."
-      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent generate {{.ENT_SCHEMA}}
+      - GOFLAGS="-mod=mod" go run entgo.io/ent/cmd/ent generate --template ./internal/store/templates {{.ENT_SCHEMA}}
       - task: tidy
 
   ent:new:
