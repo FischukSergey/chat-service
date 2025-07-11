@@ -16,7 +16,7 @@ type Repo struct {
 }
 
 func New(opts Options) (*Repo, error) {
-	// FIXME: Валидация опций
+	// фикс: Валидация опций
 	if err := opts.Validate(); err != nil {
 		return nil, fmt.Errorf("validate options: %w", err)
 	}

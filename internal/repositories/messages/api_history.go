@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+
 	"github.com/FischukSergey/chat-service/internal/store"
 	"github.com/FischukSergey/chat-service/internal/store/chat"
 	"github.com/FischukSergey/chat-service/internal/store/message"
@@ -80,17 +81,16 @@ func (r *Repo) GetClientChatMessages(
 		Where(chat.ClientID(clientID)).
 		Only(ctx)
 	if err != nil {
-		if store.IsNotFound(err) {
-			// Создаем чат если его нет
-			clientChat, err = r.db.Chat(ctx).
-				Create().
-				SetClientID(clientID).
-				Save(ctx)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to create client chat: %w", err)
-			}
-		} else {
+		if !store.IsNotFound(err) {
 			return nil, nil, fmt.Errorf("failed to get client chat: %w", err)
+		}
+		// Создаем чат если его нет
+		clientChat, err = r.db.Chat(ctx).
+			Create().
+			SetClientID(clientID).
+			Save(ctx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to create client chat: %w", err)
 		}
 	}
 	// Строим запрос для получения сообщений

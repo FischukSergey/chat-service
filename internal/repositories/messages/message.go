@@ -12,12 +12,12 @@ type Message struct {
 	ChatID   types.ChatID
 	AuthorID types.UserID
 	Body     string
-	// FIXME: Остальные поля (тесты подскажут)
-	IsVisibleForClient bool
+	// фикс: Остальные поля (тесты подскажут)
+	IsVisibleForClient  bool
 	IsVisibleForManager bool
-	IsService bool
-	IsBlocked bool
-	CreatedAt time.Time
+	IsService           bool
+	IsBlocked           bool
+	CreatedAt           time.Time
 }
 
 func adaptStoreMessage(m *store.Message) Message {
@@ -26,11 +26,11 @@ func adaptStoreMessage(m *store.Message) Message {
 		ChatID:   m.ChatID,
 		AuthorID: m.AuthorID,
 		Body:     m.Body,
-		// FIXME: Остальные поля (тесты подскажут)
-		IsVisibleForClient: m.IsVisibleForClient,
+		// фикс: Остальные поля (тесты подскажут)
+		IsVisibleForClient:  m.IsVisibleForClient,
 		IsVisibleForManager: m.IsVisibleForManager,
-		IsService: m.IsService,
-		IsBlocked: m.IsBlocked,
-		CreatedAt: m.CreatedAt,
+		IsService:           m.IsService,
+		IsBlocked:           m.IsBlocked,
+		CreatedAt:           m.CreatedAt,
 	}
 }
