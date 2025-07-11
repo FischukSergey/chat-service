@@ -157,6 +157,9 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := mu.mutation.Body(); ok {
 		_spec.SetField(message.FieldBody, field.TypeString, value)
 	}
+	if mu.mutation.AuthorIDCleared() {
+		_spec.ClearField(message.FieldAuthorID, field.TypeString)
+	}
 	if value, ok := mu.mutation.IsVisibleForClient(); ok {
 		_spec.SetField(message.FieldIsVisibleForClient, field.TypeBool, value)
 	}
@@ -348,6 +351,9 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 	}
 	if value, ok := muo.mutation.Body(); ok {
 		_spec.SetField(message.FieldBody, field.TypeString, value)
+	}
+	if muo.mutation.AuthorIDCleared() {
+		_spec.ClearField(message.FieldAuthorID, field.TypeString)
 	}
 	if value, ok := muo.mutation.IsVisibleForClient(); ok {
 		_spec.SetField(message.FieldIsVisibleForClient, field.TypeBool, value)

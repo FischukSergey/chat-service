@@ -27,7 +27,7 @@ func (Problem) Fields() []ent.Field {
 			Immutable(),
 		field.String("manager_id").
 			GoType(types.UserID{}).
-			NotEmpty().
+			Optional().
 			Immutable(),
 		field.Enum("status").
 			Values("open", "in_progress", "resolved", "closed").

@@ -35,6 +35,14 @@ func (mc *MessageCreate) SetAuthorID(ti types.UserID) *MessageCreate {
 	return mc
 }
 
+// SetNillableAuthorID sets the "author_id" field if the given value is not nil.
+func (mc *MessageCreate) SetNillableAuthorID(ti *types.UserID) *MessageCreate {
+	if ti != nil {
+		mc.SetAuthorID(*ti)
+	}
+	return mc
+}
+
 // SetIsVisibleForClient sets the "is_visible_for_client" field.
 func (mc *MessageCreate) SetIsVisibleForClient(b bool) *MessageCreate {
 	mc.mutation.SetIsVisibleForClient(b)
@@ -220,11 +228,8 @@ func (mc *MessageCreate) check() error {
 			return &ValidationError{Name: "body", err: fmt.Errorf(`store: validator failed for field "Message.body": %w`, err)}
 		}
 	}
-	if _, ok := mc.mutation.AuthorID(); !ok {
-		return &ValidationError{Name: "author_id", err: errors.New(`store: missing required field "Message.author_id"`)}
-	}
 	if v, ok := mc.mutation.AuthorID(); ok {
-		if err := message.AuthorIDValidator(v.String()); err != nil {
+		if err := v.Validate(); err != nil {
 			return &ValidationError{Name: "author_id", err: fmt.Errorf(`store: validator failed for field "Message.author_id": %w`, err)}
 		}
 	}

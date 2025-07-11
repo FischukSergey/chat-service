@@ -25,7 +25,7 @@ var (
 	MessagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
 		{Name: "body", Type: field.TypeString},
-		{Name: "author_id", Type: field.TypeString},
+		{Name: "author_id", Type: field.TypeString, Nullable: true},
 		{Name: "is_visible_for_client", Type: field.TypeBool, Default: true},
 		{Name: "is_visible_for_manager", Type: field.TypeBool, Default: true},
 		{Name: "is_blocked", Type: field.TypeBool, Default: false},
@@ -99,7 +99,7 @@ var (
 	// ProblemsColumns holds the columns for the "problems" table.
 	ProblemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
-		{Name: "manager_id", Type: field.TypeString},
+		{Name: "manager_id", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"open", "in_progress", "resolved", "closed"}, Default: "open"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

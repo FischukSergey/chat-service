@@ -30,8 +30,8 @@ func (Message) Fields() []ent.Field {
 			NotEmpty(),
 		field.String("author_id").
 			GoType(types.UserID{}).
-			Immutable().
-			NotEmpty(),
+			Optional().
+			Immutable(),
 		field.Bool("is_visible_for_client").
 			Default(true),
 		field.Bool("is_visible_for_manager").

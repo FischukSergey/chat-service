@@ -56,10 +56,6 @@ func init() {
 	messageDescBody := messageFields[1].Descriptor()
 	// message.BodyValidator is a validator for the "body" field. It is called by the builders before save.
 	message.BodyValidator = messageDescBody.Validators[0].(func(string) error)
-	// messageDescAuthorID is the schema descriptor for author_id field.
-	messageDescAuthorID := messageFields[2].Descriptor()
-	// message.AuthorIDValidator is a validator for the "author_id" field. It is called by the builders before save.
-	message.AuthorIDValidator = messageDescAuthorID.Validators[0].(func(string) error)
 	// messageDescIsVisibleForClient is the schema descriptor for is_visible_for_client field.
 	messageDescIsVisibleForClient := messageFields[3].Descriptor()
 	// message.DefaultIsVisibleForClient holds the default value on creation for the is_visible_for_client field.
@@ -86,10 +82,6 @@ func init() {
 	message.DefaultID = messageDescID.Default.(func() types.MessageID)
 	problemFields := schema.Problem{}.Fields()
 	_ = problemFields
-	// problemDescManagerID is the schema descriptor for manager_id field.
-	problemDescManagerID := problemFields[1].Descriptor()
-	// problem.ManagerIDValidator is a validator for the "manager_id" field. It is called by the builders before save.
-	problem.ManagerIDValidator = problemDescManagerID.Validators[0].(func(string) error)
 	// problemDescCreatedAt is the schema descriptor for created_at field.
 	problemDescCreatedAt := problemFields[3].Descriptor()
 	// problem.DefaultCreatedAt holds the default value on creation for the created_at field.

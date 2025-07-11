@@ -134,6 +134,16 @@ func ManagerIDHasSuffix(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldHasSuffix(FieldManagerID, vc))
 }
 
+// ManagerIDIsNil applies the IsNil predicate on the "manager_id" field.
+func ManagerIDIsNil() predicate.Problem {
+	return predicate.Problem(sql.FieldIsNull(FieldManagerID))
+}
+
+// ManagerIDNotNil applies the NotNil predicate on the "manager_id" field.
+func ManagerIDNotNil() predicate.Problem {
+	return predicate.Problem(sql.FieldNotNull(FieldManagerID))
+}
+
 // ManagerIDEqualFold applies the EqualFold predicate on the "manager_id" field.
 func ManagerIDEqualFold(v types.UserID) predicate.Problem {
 	vc := v.String()
