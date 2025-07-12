@@ -45,7 +45,7 @@ func New(opts Options) (UseCase, error) {
 func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
 	// Фикс: 1) Если запрос невалиден, то возвращаем ErrInvalidRequest
 	if err := req.Validate(); err != nil {
-		return Response{}, ErrInvalidRequest // Возвращаем ErrInvalidRequest вместо исходной ошибки
+		return Response{}, ErrInvalidRequest
 	}
 
 	// Фикс: 2) Если не вышло декодировать (decode) курсор, то возвращаем ErrInvalidCursor

@@ -34,18 +34,18 @@ func (r Request) Validate() error {
 
 type Response struct {
 	// Фикс: Заполнить (тесты помогут)
-	Messages []Message
+	Messages   []Message
 	NextCursor string
 }
 
 type Message struct {
 	// Фикс: Заполнить (тесты помогут)
 	ID                  types.MessageID `json:"id"`
-	AuthorID            types.UserID    `json:"author_id"`
+	AuthorID            types.UserID    `json:"authorId"`
 	Body                string          `json:"body"`
-	CreatedAt           time.Time       `json:"created_at"`
-	IsReceived          bool            `json:"is_received"`
-	IsBlocked           bool            `json:"is_blocked"`
-	IsService           bool            `json:"is_service"`
-	IsVisibleForManager bool            `json:"is_visible_for_manager"`
+	CreatedAt           time.Time       `json:"createdAt"`
+	IsReceived          bool            `json:"isReceived"`
+	IsBlocked           bool            `json:"isBlocked"`
+	IsService           bool            `json:"isService"`
+	IsVisibleForManager bool            `json:"isVisibleForManager"`
 }
