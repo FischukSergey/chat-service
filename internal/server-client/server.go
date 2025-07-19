@@ -29,6 +29,8 @@ const (
 	keycloakRole     = "support-chat-client"
 )
 
+// Фикс: Пробрасывать в опции echo.HTTPErrorHandler и использовать его в New
+
 //go:generate options-gen -out-filename=server_options.gen.go -from-struct=Options
 type Options struct {
 	logger               *zap.Logger              `option:"mandatory" validate:"required"`
@@ -37,6 +39,7 @@ type Options struct {
 	v1Swagger            *openapi3.T              `option:"mandatory" validate:"required"`
 	v1Handlers           clientv1.ServerInterface `option:"mandatory" validate:"required"`
 	keycloakIntrospector *keycloakclient.Client   `option:"optional"`
+	echoHTTPErrorHandler echo.HTTPErrorHandler    `option:"optional"`
 }
 
 type Server struct {
@@ -65,6 +68,11 @@ func New(opts Options) (*Server, error) {
 			AllowHeaders: []string{"X-Request-ID", "Content-Type", "Authorization"},
 		}),
 	)
+
+	// Фикс: Пробрасывать в опции echo.HTTPErrorHandler и использовать его в New
+	if opts.echoHTTPErrorHandler != nil {
+		e.HTTPErrorHandler = opts.echoHTTPErrorHandler
+	}
 
 	// Добавляем middleware для авторизации Keycloak, если указан introspector
 	if opts.keycloakIntrospector != nil {

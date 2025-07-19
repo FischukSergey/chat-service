@@ -11,11 +11,11 @@ info:
   version: v1
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/v1
     description: Development server
 
 paths:
-  /v1/getHistory:
+  /getHistory:
     post:
       operationId: PostGetHistory
       description: Get chat history.
@@ -55,9 +55,30 @@ components:
       schema:
         type: string
         format: uuid
+        x-go-type: types.RequestID
+        x-go-type-import:
+          path: "github.com/FischukSergey/chat-service/internal/types"
       required: true
 
   schemas:
+    # Common.
+
+    Error:
+      required: [ message, code ]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+        details:
+          type: string
+
+    ErrorCode:
+      type: integer
+      description: contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+      # TODO: Конкретные коды появятся в следующем уроке.
+      minimum: 400
+
     # /getHistory
 
     GetHistoryRequest:
@@ -75,11 +96,11 @@ components:
           description: Курсор для пагинации
 
     GetHistoryResponse:
-      type: object
-      required: [ data ]
       properties:
         data:
           $ref: "#/components/schemas/MessagesPage"
+        error:
+          $ref: "#/components/schemas/Error"
 
     MessagesPage:
       type: object
@@ -96,10 +117,17 @@ components:
             Курсор для следующей страницы.
             Если нет следующей страницы, то не возвращается.
             Если нет курсора, то возвращается пустая строка.
+        prevCursor:
+          type: string
+          nullable: true
+          description: |
+            Курсор для предыдущей страницы.
+            Если нет предыдущей страницы, то не возвращается.
+            Если нет курсора, то возвращается пустая строка.
 
     Message:
       type: object
-      required: [ id, authorId, body, createdAt ] 
+      required: [ id, body, createdAt, isReceived, isBlocked, isService ] 
       properties:
         id:
           type: string
@@ -118,3 +146,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        isReceived:
+          type: boolean
+        isBlocked:
+          type: boolean
+        isService:
+          type: boolean

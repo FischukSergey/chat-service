@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/FischukSergey/chat-service/internal/errors"
+
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
@@ -54,6 +56,10 @@ func NewRequestLogger(logger *zap.Logger) echo.MiddlewareFunc {
 				zap.String("user_agent", req.UserAgent()),
 				zap.Int("status", res.Status),
 			}
+
+			// Фикс: чтобы при наличии ошибки менять status на соответствующий код.
+			// Фикс: Иначе в логах мы всегда будем видеть 200 OK и пропускать ошибки :)
+			fields = append(fields, zap.Int("status", errors.GetServerErrorCode(err)))
 
 			// Добавляем user_id из контекста, если есть
 			userID, ok := userID(c)

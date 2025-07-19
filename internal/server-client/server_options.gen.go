@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	errors461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/errors"
 	validator461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/validator"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
 
@@ -45,6 +46,13 @@ func NewOptions(
 func WithKeycloakIntrospector(opt *keycloakclient.Client) OptOptionsSetter {
 	return func(o *Options) {
 		o.keycloakIntrospector = opt
+
+	}
+}
+
+func WithEchoHTTPErrorHandler(opt echo.HTTPErrorHandler) OptOptionsSetter {
+	return func(o *Options) {
+		o.echoHTTPErrorHandler = opt
 
 	}
 }
