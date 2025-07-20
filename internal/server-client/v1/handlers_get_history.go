@@ -2,31 +2,32 @@ package clientv1
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 
 	"github.com/FischukSergey/chat-service/internal/middlewares"
-	"github.com/FischukSergey/chat-service/internal/types"
+	// "github.com/FischukSergey/chat-service/internal/types".
 	gethistory "github.com/FischukSergey/chat-service/internal/usecases/client/get-history"
 	"github.com/FischukSergey/chat-service/pkg/pointer"
 )
 
-var stub = MessagesPage{Messages: []Message{
-	{
-		AuthorId:  pointer.Ptr(types.NewUserID()),
-		Body:      "Здравствуйте! Разберёмся.",
-		CreatedAt: time.Now(),
-		Id:        types.NewMessageID(),
-	},
-	{
-		AuthorId:  pointer.Ptr(types.MustParse[types.UserID]("bbc3fa26-2961-400b-beec-6fc56d509c36")), // подставь ID своего пользователя
-		Body:      "Привет! Не могу снять денег с карты,\nпишет 'карта заблокирована'",
-		CreatedAt: time.Now().Add(-time.Minute),
-		Id:        types.NewMessageID(),
-	},
-}}
+// var stub = MessagesPage{Messages: []Message{
+// 	{
+// 		AuthorId:  pointer.Ptr(types.NewUserID()),
+// 		Body:      "Здравствуйте! Разберёмся.",
+// 		CreatedAt: time.Now(),
+// 		Id:        types.NewMessageID(),
+// 	},
+// 	{
+// 		AuthorId: pointer.Ptr(
+// 			types.MustParse[types.UserID]("bbc3fa26-2961-400b-beec-6fc56d509c36"),
+// 		),
+// 		Body:      "Привет! Не могу снять денег с карты,\nпишет 'карта заблокирована'",
+// 		CreatedAt: time.Now().Add(-time.Minute),
+// 		Id:        types.NewMessageID(),
+// 	},
+// }}
 
 func (h Handlers) PostGetHistory(eCtx echo.Context, params PostGetHistoryParams) error {
 	ctx := eCtx.Request().Context()
@@ -76,8 +77,8 @@ func (h Handlers) PostGetHistory(eCtx echo.Context, params PostGetHistoryParams)
 	}
 
 	// Создаем кастомную структуру для backward compatibility
-	customResponse := map[string]interface{}{
-		"data": map[string]interface{}{
+	customResponse := map[string]any{
+		"data": map[string]any{
 			"messages": messages,
 			"next":     usecaseResp.NextCursor,
 		},

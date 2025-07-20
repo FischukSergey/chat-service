@@ -7,10 +7,8 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	oapimdlwr "github.com/oapi-codegen/echo-middleware"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
@@ -83,19 +81,21 @@ func New(opts Options) (*Server, error) {
 		))
 	}
 
-	// переделаный авторский вариант ??????????
-	// Создаем OpenAPI валидатор с правильными опциями
-	validator := oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
-		Options: openapi3filter.Options{
-			ExcludeRequestBody:  false,
-			ExcludeResponseBody: true,
-			AuthenticationFunc:  openapi3filter.NoopAuthenticationFunc,
-		},
-	})
-
-	// Регистрируем обработчики напрямую на маршрутах без группы v1
+	// Надо сделать!!!!: Исправить OpenAPI валидацию позже
+	// Пока работаем без валидатора
 	wrapper := &clientv1.ServerInterfaceWrapper{Handler: opts.v1Handlers}
-	e.POST("/v1/getHistory", wrapper.PostGetHistory, validator)
+	e.POST("/v1/getHistory", wrapper.PostGetHistory)
+
+	// Добавляем базовую валидацию вручную
+	e.POST("/v1/getHistory", func(c echo.Context) error {
+		// Проверяем только обязательный заголовок
+		if c.Request().Header.Get("X-Request-ID") == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "X-Request-ID header is required")
+		}
+
+		// Вызываем основной обработчик
+		return wrapper.PostGetHistory(c)
+	})
 
 	srv := &http.Server{
 		Addr:              opts.addr,

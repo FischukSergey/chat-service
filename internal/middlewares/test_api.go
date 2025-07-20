@@ -1,9 +1,10 @@
 package middlewares
 
 import (
-	"github.com/FischukSergey/chat-service/internal/types"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
+
+	"github.com/FischukSergey/chat-service/internal/types"
 )
 
 func SetToken(c echo.Context, uid types.UserID) {

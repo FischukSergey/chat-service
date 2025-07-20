@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/FischukSergey/chat-service/internal/errors"
-
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+
+	"github.com/FischukSergey/chat-service/internal/errors"
 )
 
 // NewRequestLogger создает middleware для логирования HTTP запросов.
@@ -59,7 +59,10 @@ func NewRequestLogger(logger *zap.Logger) echo.MiddlewareFunc {
 
 			// Фикс: чтобы при наличии ошибки менять status на соответствующий код.
 			// Фикс: Иначе в логах мы всегда будем видеть 200 OK и пропускать ошибки :)
-			fields = append(fields, zap.Int("status", errors.GetServerErrorCode(err)))
+			if err != nil {
+				errorCode := errors.GetServerErrorCode(err)
+				fields = append(fields, zap.Int("status", errorCode))
+			}
 
 			// Добавляем user_id из контекста, если есть
 			userID, ok := userID(c)

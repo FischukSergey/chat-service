@@ -64,10 +64,13 @@ func initServerClient( // воспользуйся мной в chat-service/main
 }
 
 // Фикс: 2) Инициализация httpErrorHandler (и его проброс в сервер)
-// Фикс: 3) "server-client" logger должен пронизывать все компоненты сервера
+// Фикс: 3) "server-client" logger должен пронизывать все компоненты сервера.
 func initHTTPErrorHandler(lg *zap.Logger) echo.HTTPErrorHandler {
 	return func(err error, c echo.Context) {
 		lg.Error("http error", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		err = c.JSON(http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		if err != nil {
+			lg.Error("failed to send error response", zap.Error(err))
+		}
 	}
 }

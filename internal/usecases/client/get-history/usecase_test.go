@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/FischukSergey/chat-service/internal/cursor"
@@ -179,10 +178,10 @@ func (s *UseCaseSuite) TestGetClientChatMessages_Success_SinglePage() {
 		s.Equal(expectedMsgs[i].IsService, resp.Messages[i].IsService)
 	}
 
-	s.T().Run("msg received flag logic", func(t *testing.T) {
-		assert.False(t, resp.Messages[0].IsReceived)
-		assert.True(t, resp.Messages[1].IsReceived)
-		assert.False(t, resp.Messages[2].IsReceived)
+	s.Run("msg received flag logic", func() {
+		s.False(resp.Messages[0].IsReceived)
+		s.True(resp.Messages[1].IsReceived)
+		s.False(resp.Messages[2].IsReceived)
 	})
 }
 

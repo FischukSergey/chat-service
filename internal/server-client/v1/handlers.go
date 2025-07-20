@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/FischukSergey/chat-service/internal/usecases/client/get-history"
+	gethistory "github.com/FischukSergey/chat-service/internal/usecases/client/get-history"
 )
-
 
 //go:generate mockgen -source=$GOFILE -destination=mocks/handlers_mocks.gen.go -package=clientv1mocks
 type getHistoryUseCase interface {

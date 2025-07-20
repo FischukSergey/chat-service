@@ -55,7 +55,7 @@ func (s *HandlersSuite) TearDownTest() {
 
 func (s *HandlersSuite) newEchoCtx(
 	requestID types.RequestID,
-	path string, //nolint:unparam
+	path string, //nolint:unparam // path parameter is always the same in tests
 	body string,
 ) (*httptest.ResponseRecorder, echo.Context) {
 	req := httptest.NewRequest(http.MethodPost, path, bytes.NewBufferString(body))
