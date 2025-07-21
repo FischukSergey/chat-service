@@ -114,6 +114,9 @@ func (pu *ProblemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if pu.mutation.ManagerIDCleared() {
+		_spec.ClearField(problem.FieldManagerID, field.TypeString)
+	}
 	if value, ok := pu.mutation.Status(); ok {
 		_spec.SetField(problem.FieldStatus, field.TypeEnum, value)
 	}
@@ -255,6 +258,9 @@ func (puo *ProblemUpdateOne) sqlSave(ctx context.Context) (_node *Problem, err e
 				ps[i](selector)
 			}
 		}
+	}
+	if puo.mutation.ManagerIDCleared() {
+		_spec.ClearField(problem.FieldManagerID, field.TypeString)
 	}
 	if value, ok := puo.mutation.Status(); ok {
 		_spec.SetField(problem.FieldStatus, field.TypeEnum, value)

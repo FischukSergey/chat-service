@@ -6,12 +6,12 @@ system.secret-key: '1234567890'
 auth.allow-registration: true
 
 # Database
-database.engine: 'django.db.backends.postgresql'
-database.name: 'sentry'
-database.user: 'sentry'
-database.password: 'sentry'
-database.host: 'postgres'
-database.port: 5432
+# database.engine: 'django.db.backends.postgresql'
+# database.name: 'sentry'
+# database.user: 'sentry'
+# database.password: 'sentry'
+# database.host: 'postgres'
+# database.port: 5432
 
 # Redis
 redis.clusters:

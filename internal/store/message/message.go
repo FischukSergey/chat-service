@@ -82,8 +82,6 @@ func ValidColumn(column string) bool {
 var (
 	// BodyValidator is a validator for the "body" field. It is called by the builders before save.
 	BodyValidator func(string) error
-	// AuthorIDValidator is a validator for the "author_id" field. It is called by the builders before save.
-	AuthorIDValidator func(string) error
 	// DefaultIsVisibleForClient holds the default value on creation for the "is_visible_for_client" field.
 	DefaultIsVisibleForClient bool
 	// DefaultIsVisibleForManager holds the default value on creation for the "is_visible_for_manager" field.

@@ -224,6 +224,16 @@ func AuthorIDHasSuffix(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldHasSuffix(FieldAuthorID, vc))
 }
 
+// AuthorIDIsNil applies the IsNil predicate on the "author_id" field.
+func AuthorIDIsNil() predicate.Message {
+	return predicate.Message(sql.FieldIsNull(FieldAuthorID))
+}
+
+// AuthorIDNotNil applies the NotNil predicate on the "author_id" field.
+func AuthorIDNotNil() predicate.Message {
+	return predicate.Message(sql.FieldNotNull(FieldAuthorID))
+}
+
 // AuthorIDEqualFold applies the EqualFold predicate on the "author_id" field.
 func AuthorIDEqualFold(v types.UserID) predicate.Message {
 	vc := v.String()

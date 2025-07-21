@@ -18,12 +18,22 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
+
+// Error defines model for Error.
+type Error struct {
+	// Code contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+	Code    ErrorCode `json:"code"`
+	Details *string   `json:"details,omitempty"`
+	Message string    `json:"message"`
+}
+
+// ErrorCode contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+type ErrorCode = int
 
 // GetHistoryRequest defines model for GetHistoryRequest.
 type GetHistoryRequest struct {
@@ -34,15 +44,19 @@ type GetHistoryRequest struct {
 
 // GetHistoryResponse defines model for GetHistoryResponse.
 type GetHistoryResponse struct {
-	Data MessagesPage `json:"data"`
+	Data  *MessagesPage `json:"data,omitempty"`
+	Error *Error        `json:"error,omitempty"`
 }
 
 // Message defines model for Message.
 type Message struct {
-	AuthorId  types.UserID    `json:"authorId"`
-	Body      string          `json:"body"`
-	CreatedAt time.Time       `json:"createdAt"`
-	Id        types.MessageID `json:"id"`
+	AuthorId   *types.UserID   `json:"authorId,omitempty"`
+	Body       string          `json:"body"`
+	CreatedAt  time.Time       `json:"createdAt"`
+	Id         types.MessageID `json:"id"`
+	IsBlocked  bool            `json:"isBlocked"`
+	IsReceived bool            `json:"isReceived"`
+	IsService  bool            `json:"isService"`
 }
 
 // MessagesPage defines model for MessagesPage.
@@ -53,10 +67,15 @@ type MessagesPage struct {
 	// Если нет следующей страницы, то не возвращается.
 	// Если нет курсора, то возвращается пустая строка.
 	NextCursor *string `json:"nextCursor"`
+
+	// PrevCursor Курсор для предыдущей страницы.
+	// Если нет предыдущей страницы, то не возвращается.
+	// Если нет курсора, то возвращается пустая строка.
+	PrevCursor *string `json:"prevCursor"`
 }
 
 // XRequestIDHeader defines model for XRequestIDHeader.
-type XRequestIDHeader = openapi_types.UUID
+type XRequestIDHeader = types.RequestID
 
 // PostGetHistoryParams defines parameters for PostGetHistory.
 type PostGetHistoryParams struct {
@@ -70,7 +89,7 @@ type PostGetHistoryJSONRequestBody = GetHistoryRequest
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /v1/getHistory)
+	// (POST /getHistory)
 	PostGetHistory(ctx echo.Context, params PostGetHistoryParams) error
 }
 
@@ -140,32 +159,35 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/v1/getHistory", wrapper.PostGetHistory)
+	router.POST(baseURL+"/getHistory", wrapper.PostGetHistory)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

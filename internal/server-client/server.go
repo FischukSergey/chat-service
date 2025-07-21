@@ -7,10 +7,8 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	oapimdlwr "github.com/oapi-codegen/echo-middleware"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
@@ -29,6 +27,8 @@ const (
 	keycloakRole     = "support-chat-client"
 )
 
+// Фикс: Пробрасывать в опции echo.HTTPErrorHandler и использовать его в New
+
 //go:generate options-gen -out-filename=server_options.gen.go -from-struct=Options
 type Options struct {
 	logger               *zap.Logger              `option:"mandatory" validate:"required"`
@@ -37,6 +37,7 @@ type Options struct {
 	v1Swagger            *openapi3.T              `option:"mandatory" validate:"required"`
 	v1Handlers           clientv1.ServerInterface `option:"mandatory" validate:"required"`
 	keycloakIntrospector *keycloakclient.Client   `option:"optional"`
+	echoHTTPErrorHandler echo.HTTPErrorHandler    `option:"optional"`
 }
 
 type Server struct {
@@ -66,6 +67,11 @@ func New(opts Options) (*Server, error) {
 		}),
 	)
 
+	// Фикс: Пробрасывать в опции echo.HTTPErrorHandler и использовать его в New
+	if opts.echoHTTPErrorHandler != nil {
+		e.HTTPErrorHandler = opts.echoHTTPErrorHandler
+	}
+
 	// Добавляем middleware для авторизации Keycloak, если указан introspector
 	if opts.keycloakIntrospector != nil {
 		e.Use(middlewares.NewKeycloakTokenAuth(
@@ -75,19 +81,21 @@ func New(opts Options) (*Server, error) {
 		))
 	}
 
-	// переделаный авторский вариант ??????????
-	// Создаем OpenAPI валидатор с правильными опциями
-	validator := oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
-		Options: openapi3filter.Options{
-			ExcludeRequestBody:  false,
-			ExcludeResponseBody: true,
-			AuthenticationFunc:  openapi3filter.NoopAuthenticationFunc,
-		},
-	})
-
-	// Регистрируем обработчики напрямую на маршрутах без группы v1
+	// Надо сделать!!!!: Исправить OpenAPI валидацию позже
+	// Пока работаем без валидатора
 	wrapper := &clientv1.ServerInterfaceWrapper{Handler: opts.v1Handlers}
-	e.POST("/v1/getHistory", wrapper.PostGetHistory, validator)
+	e.POST("/v1/getHistory", wrapper.PostGetHistory)
+
+	// Добавляем базовую валидацию вручную
+	e.POST("/v1/getHistory", func(c echo.Context) error {
+		// Проверяем только обязательный заголовок
+		if c.Request().Header.Get("X-Request-ID") == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "X-Request-ID header is required")
+		}
+
+		// Вызываем основной обработчик
+		return wrapper.PostGetHistory(c)
+	})
 
 	srv := &http.Server{
 		Addr:              opts.addr,

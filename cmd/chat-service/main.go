@@ -15,8 +15,10 @@ import (
 	keycloakclient "github.com/FischukSergey/chat-service/internal/clients/keycloak"
 	"github.com/FischukSergey/chat-service/internal/config"
 	"github.com/FischukSergey/chat-service/internal/logger"
+	messagesrepo "github.com/FischukSergey/chat-service/internal/repositories/messages"
 	clientv1 "github.com/FischukSergey/chat-service/internal/server-client/v1"
 	serverdebug "github.com/FischukSergey/chat-service/internal/server-debug"
+	"github.com/FischukSergey/chat-service/internal/store"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
@@ -48,6 +50,40 @@ func run() (errReturned error) {
 	}
 	defer logger.Sync()
 
+	// Фикс: В main предположительно должен появиться следующий код:
+	// Фикс: 1) Создание клиента к PSQL (не забудьте его "закрыть")
+	storeClient, err := store.NewPSQLClient(
+		store.NewPSQLOptions(
+			cfg.Stores.PSQL.Address,
+			cfg.Stores.PSQL.Username,
+			cfg.Stores.PSQL.Password,
+			cfg.Stores.PSQL.Database,
+			cfg.Stores.PSQL.Debug,
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("init store client: %v", err)
+	}
+	defer func() {
+		if err := storeClient.Close(); err != nil {
+			zap.L().Error("close store client", zap.Error(err))
+		}
+	}()
+
+	// Фикс: 2) Миграция: https://entgo.io/docs/migrate/#auto-migration
+	if err := storeClient.Schema.Create(context.Background()); err != nil {
+		return fmt.Errorf("create schema: %v", err)
+	}
+
+	// Фикс: 3) Инициализация store.Database
+	database := store.NewDatabase(storeClient)
+
+	// Фикс: 4) Инициализация репозитория сообщений
+	messagesRepository, err := messagesrepo.New(messagesrepo.NewOptions(database))
+	if err != nil {
+		return fmt.Errorf("create messages repository: %v", err)
+	}
+
 	// Загружаем Swagger спецификацию
 	swagger, err := clientv1.GetSwagger()
 	if err != nil {
@@ -74,6 +110,7 @@ func run() (errReturned error) {
 		cfg.Servers.Client.AllowOrigins,
 		swagger,
 		keycloakClient,
+		messagesRepository,
 	)
 	if err != nil {
 		return fmt.Errorf("init server client: %v", err)
